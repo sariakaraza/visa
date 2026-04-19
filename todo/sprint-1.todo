@@ -1,0 +1,29 @@
+TL : ETUO03126 Sandratra
+Dev Backoffice : ETU003378 Sariaka et ETU003203 Finoana
+
+Todo Sprint 1 :
+Voici les donnees a faire dans le statut d'une demande : Dossier créé -> (eto tsy aiko) -> Visa approuvé
+    Finoana : 
+        - Creation de toutes les entites en prenant les tables dans sql/table.sql
+        - Creation de toutes les repositories de ces entites
+        - Creation des services de ces repo et creer les fonction CRUD des entites
+
+        NB : Utiliser interface pour scalabilite et couche d'implementation
+        ex : 
+        public interface DemandeService {
+            void demander();
+        }
+
+        @Service
+        public class DemandeImpl implements PaymentService {
+            public void demander() {
+                System.out.println("Demande de visa");
+            }
+        }
+        
+
+    Sariaka :
+        - Creation de formulaire d'insertion de nouveau titre avec les champs suivants : nom*, prenom, date naissance*, 
+        adresse mada*, situation familiale*, nationalite* , les cases a cocher selon la demande
+        - Appeler toutes les fonctions necessaires pour inserer dans les tables suivantes : demande, demande_statut
+        - Verification insertion dans la base lors de la validation du formulaire
