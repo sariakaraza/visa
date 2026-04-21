@@ -2,9 +2,16 @@ package com.visa.entity;
 
 import jakarta.persistence.*;
 
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
+@Getter
+@Setter
 @Entity
 @Table(name = "nationalite")
+
+@NoArgsConstructor
 public class Nationalite {
 
     @Id
@@ -13,26 +20,7 @@ public class Nationalite {
 
     private String libelle;
 
-    public Nationalite() {
-    }
-
     public Nationalite(String libelle) {
-        this.libelle = libelle;
-    }
-
-    public Integer getIdNationalite() {
-        return idNationalite;
-    }
-
-    public void setIdNationalite(Integer idNationalite) {
-        this.idNationalite = idNationalite;
-    }
-
-    public String getLibelle() {
-        return libelle;
-    }
-
-    public void setLibelle(String libelle) {
         this.libelle = libelle;
     }
 }

@@ -2,9 +2,16 @@ package com.visa.entity;
 
 import jakarta.persistence.*;
 
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
+@Getter
+@Setter
+@NoArgsConstructor
 @Entity
 @Table(name = "lieu")
+
 public class Lieu {
 
     @Id
@@ -13,26 +20,7 @@ public class Lieu {
 
     private String libelle;
 
-    public Lieu() {
-    }
-
     public Lieu(String libelle) {
-        this.libelle = libelle;
-    }
-
-    public Integer getIdLieu() {
-        return idLieu;
-    }
-
-    public void setIdLieu(Integer idLieu) {
-        this.idLieu = idLieu;
-    }
-
-    public String getLibelle() {
-        return libelle;
-    }
-
-    public void setLibelle(String libelle) {
         this.libelle = libelle;
     }
 }

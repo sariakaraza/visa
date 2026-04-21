@@ -3,7 +3,12 @@ package com.visa.entity;
 import java.sql.Timestamp;
 import jakarta.persistence.*;
 
+import lombok.Getter;
+import lombok.Setter;   
 
+
+@Getter
+@Setter
 @Entity
 @Table(name = "visa")
 public class Visa {
@@ -31,59 +36,4 @@ public class Visa {
     public Visa() {
     }
 
-    public Integer getIdVisa() {
-        return idVisa;
-    }
-
-    public void setIdVisa(Integer idVisa) {
-        this.idVisa = idVisa;
-    }
-
-    public Timestamp getDateDebut() {
-        return dateDebut;
-    }
-
-    public void setDateDebut(Timestamp dateDebut) {
-        this.dateDebut = dateDebut;
-    }
-
-    public Timestamp getDateFin() {
-        return dateFin;
-    }
-
-    public void setDateFin(Timestamp dateFin) {
-        this.dateFin = dateFin;
-    }
-
-    public String getReference() {
-        return reference;
-    }
-
-    public void setReference(String reference) {
-        this.reference = reference;
-    }
-
-    public Demande getDemande() {
-        return demande;
-    }
-
-    public void setDemande(Demande demande) {
-        this.demande = demande;
-    }
-
-    public Lieu getLieu() {
-        return lieu;
-    }
-
-    public void setLieu(Lieu lieu) {
-        this.lieu = lieu;
-    }
-
-    public Passeport getPasseport() {
-        return passeport;
-    }
-
-    public void setPasseport(Passeport passeport) {
-        this.passeport = passeport;
-    }
 }
