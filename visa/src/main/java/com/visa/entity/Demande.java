@@ -2,7 +2,12 @@ package com.visa.entity;
 
 import java.sql.Timestamp;
 import jakarta.persistence.*;
+import lombok.Getter;
+// import lombok.NoArgsConstructor;
+import lombok.Setter;
 
+@Getter
+@Setter
 
 @Entity
 @Table(name = "demande")
@@ -29,43 +34,5 @@ public class Demande {
     public Demande() {
     }
 
-    public Integer getIdDemande() {
-        return idDemande;
-    }
-
-    public void setIdDemande(Integer idDemande) {
-        this.idDemande = idDemande;
-    }
-
-    public Timestamp getDateDemande() {
-        return dateDemande;
-    }
-
-    public void setDateDemande(Timestamp dateDemande) {
-        this.dateDemande = dateDemande;
-    }
-
-    public TypeDemande getTypeDemande() {
-        return typeDemande;
-    }
-
-    public void setTypeDemande(TypeDemande typeDemande) {
-        this.typeDemande = typeDemande;
-    }
-
-    public TypeVisa getTypeVisa() {
-        return typeVisa;
-    }
-
-    public void setTypeVisa(TypeVisa typeVisa) {
-        this.typeVisa = typeVisa;
-    }
-
-    public Demandeur getDemandeur() {
-        return demandeur;
-    }
-
-    public void setDemandeur(Demandeur demandeur) {
-        this.demandeur = demandeur;
-    }
+   
 }

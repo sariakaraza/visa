@@ -4,7 +4,12 @@ import java.sql.Date;
 import java.sql.Timestamp;
 import jakarta.persistence.*;
 
+import lombok.Getter;
+import lombok.Setter;   
 
+
+@Getter
+@Setter
 @Entity
 @Table(name = "visa_transformable")
 public class VisaTransformable {
@@ -26,53 +31,5 @@ public class VisaTransformable {
     private Passeport passeport;
 
     public VisaTransformable() {
-    }
-
-    public Integer getIdVisaTransformable() {
-        return idVisaTransformable;
-    }
-
-    public void setIdVisaTransformable(Integer idVisaTransformable) {
-        this.idVisaTransformable = idVisaTransformable;
-    }
-
-    public String getReference() {
-        return reference;
-    }
-
-    public void setReference(String reference) {
-        this.reference = reference;
-    }
-
-    public Date getDateEntree() {
-        return dateEntree;
-    }
-
-    public void setDateEntree(Date dateEntree) {
-        this.dateEntree = dateEntree;
-    }
-
-    public Timestamp getDateExpiration() {
-        return dateExpiration;
-    }
-
-    public void setDateExpiration(Timestamp dateExpiration) {
-        this.dateExpiration = dateExpiration;
-    }
-
-    public Lieu getLieu() {
-        return lieu;
-    }
-
-    public void setLieu(Lieu lieu) {
-        this.lieu = lieu;
-    }
-
-    public Passeport getPasseport() {
-        return passeport;
-    }
-
-    public void setPasseport(Passeport passeport) {
-        this.passeport = passeport;
     }
 }

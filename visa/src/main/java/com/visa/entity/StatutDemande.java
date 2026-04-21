@@ -2,9 +2,15 @@ package com.visa.entity;
 
 import jakarta.persistence.*;
 
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Entity
 @Table(name = "statut_demande")
+@Getter
+@Setter
+@NoArgsConstructor
 public class StatutDemande {
 
     @Id
@@ -13,26 +19,8 @@ public class StatutDemande {
 
     private String libelle;
 
-    public StatutDemande() {
-    }
-
     public StatutDemande(String libelle) {
         this.libelle = libelle;
     }
-
-    public Integer getIdStatutDemande() {
-        return idStatutDemande;
-    }
-
-    public void setIdStatutDemande(Integer idStatutDemande) {
-        this.idStatutDemande = idStatutDemande;
-    }
-
-    public String getLibelle() {
-        return libelle;
-    }
-
-    public void setLibelle(String libelle) {
-        this.libelle = libelle;
-    }
 }
+

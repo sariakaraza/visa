@@ -3,6 +3,11 @@ package com.visa.entity;
 import java.sql.Date;
 import jakarta.persistence.*;
 
+import lombok.Getter;
+import lombok.Setter;
+
+@Getter
+@Setter
 
 @Entity
 @Table(name = "demande_statut")
@@ -25,35 +30,5 @@ public class DemandeStatut {
     public DemandeStatut() {
     }
 
-    public Integer getIdDemandeStatut() {
-        return idDemandeStatut;
-    }
-
-    public void setIdDemandeStatut(Integer idDemandeStatut) {
-        this.idDemandeStatut = idDemandeStatut;
-    }
-
-    public Date getDateStatut() {
-        return dateStatut;
-    }
-
-    public void setDateStatut(Date dateStatut) {
-        this.dateStatut = dateStatut;
-    }
-
-    public Demande getDemande() {
-        return demande;
-    }
-
-    public void setDemande(Demande demande) {
-        this.demande = demande;
-    }
-
-    public StatutDemande getStatutDemande() {
-        return statutDemande;
-    }
-
-    public void setStatutDemande(StatutDemande statutDemande) {
-        this.statutDemande = statutDemande;
-    }
+   
 }

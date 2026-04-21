@@ -2,7 +2,11 @@ package com.visa.entity;
 
 import java.sql.Timestamp;
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
 
+@Getter
+@Setter
 
 @Entity
 @Table(name = "passeport")
@@ -23,43 +27,4 @@ public class Passeport {
     public Passeport() {
     }
 
-    public Integer getIdPasseport() {
-        return idPasseport;
-    }
-
-    public void setIdPasseport(Integer idPasseport) {
-        this.idPasseport = idPasseport;
-    }
-
-    public String getNumero() {
-        return numero;
-    }
-
-    public void setNumero(String numero) {
-        this.numero = numero;
-    }
-
-    public Timestamp getDateDelivrance() {
-        return dateDelivrance;
-    }
-
-    public void setDateDelivrance(Timestamp dateDelivrance) {
-        this.dateDelivrance = dateDelivrance;
-    }
-
-    public Timestamp getDateExpiration() {
-        return dateExpiration;
-    }
-
-    public void setDateExpiration(Timestamp dateExpiration) {
-        this.dateExpiration = dateExpiration;
-    }
-
-    public Demandeur getDemandeur() {
-        return demandeur;
-    }
-
-    public void setDemandeur(Demandeur demandeur) {
-        this.demandeur = demandeur;
-    }
 }
