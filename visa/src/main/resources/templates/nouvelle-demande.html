@@ -95,7 +95,7 @@
             <label>Type de Visa *</label>
             <div class="radio-group">
                 <label th:each="tv : ${typeVisas}">
-                    <input type="radio" name="idTypeVisa" th:value="${tv.idTypeVisa}" required onchange="showPasseportSection()">
+                    <input type="radio" name="idTypeVisa" th:value="${tv.idTypeVisa}" required onchange="showPasseportSection(); filterDossiersByVisa();">
                     <span th:text="${tv.libelle}"></span>
                 </label>
             </div>
@@ -104,11 +104,6 @@
         <div id="dossiersSection" class="form-group">
             <label>Dossiers Requis</label>
             <div class="checkbox-group" id="dossiersContainer">
-                <label th:if="${#lists.isEmpty(dossiersNouveauTitre)}">Aucun dossier requis pour Nouveau Titre.</label>
-                <label th:each="dossier : ${dossiersNouveauTitre}" style="display: block; margin-bottom: 8px;">
-                    <input type="checkbox" name="dossiers" th:value="${dossier.idDossier}">
-                    <span th:text="${dossier.libelle}"></span>
-                </label>
             </div>
         </div>
 
@@ -156,6 +151,8 @@
     <script th:inline="javascript">
         /*<![CDATA[*/
 
+        const dossiersByVisa = /*[[${dossiersByVisa}]]*/ {};
+
         function showPasseportSection() {
             const selectedVisaType = document.querySelector('input[name="idTypeVisa"]:checked');
             const passeportSection = document.getElementById("passeportSection");
@@ -188,6 +185,45 @@
             });
         }
 
+        function filterDossiersByVisa() {
+            const selectedVisaType = document.querySelector('input[name="idTypeVisa"]:checked');
+            const dossiersContainer = document.getElementById('dossiersContainer');
+
+            dossiersContainer.innerHTML = '';
+
+            if (!selectedVisaType) {
+                return;
+            }
+
+            const visaId = selectedVisaType.value;
+            const dossiers = dossiersByVisa[visaId] || [];
+
+            if (dossiers.length === 0) {
+                const emptyLabel = document.createElement('label');
+                emptyLabel.textContent = 'Aucun dossier requis pour ce type de visa.';
+                dossiersContainer.appendChild(emptyLabel);
+                return;
+            }
+
+            dossiers.forEach((dossier) => {
+                const label = document.createElement('label');
+                label.style.display = 'block';
+                label.style.marginBottom = '8px';
+
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.name = 'dossiers';
+                checkbox.value = dossier.idDossier;
+
+                const span = document.createElement('span');
+                span.textContent = ` ${dossier.libelle}`;
+
+                label.appendChild(checkbox);
+                label.appendChild(span);
+                dossiersContainer.appendChild(label);
+            });
+        }
+
         document.addEventListener('DOMContentLoaded', function() {
             const passeportInputs = document.querySelectorAll('#passeportSection input');
             const visaTransformableSection = document.getElementById('visaTransformableSection');
@@ -206,6 +242,8 @@
             passeportInputs.forEach(input => {
                 input.addEventListener('input', checkPasseportCompletion);
             });
+
+            filterDossiersByVisa();
         });
 
 

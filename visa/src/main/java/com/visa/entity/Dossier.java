@@ -27,8 +27,8 @@ public class Dossier {
     private String libelle;
 
     @ManyToOne
-    @JoinColumn(name = "id_type_demande", nullable = false)
-    private TypeDemande typeDemande;
+    @JoinColumn(name = "id_type_visa", nullable = false)
+    private TypeVisa typeVisa;
 
 
 }

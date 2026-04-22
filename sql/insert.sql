@@ -53,7 +53,7 @@ INSERT INTO type_demande (libelle) VALUES
 -- Dossiers Investisseur
 -- =========================
 
-INSERT INTO dossier (libelle, id_type_demande) VALUES
+INSERT INTO dossier (libelle, id_type_visa) VALUES
 ('Statut de la Société', 1),
 ('Extrait d’inscription au registre de commerce', 1),
 ('Carte fiscale', 1);
@@ -62,6 +62,6 @@ INSERT INTO dossier (libelle, id_type_demande) VALUES
 -- Dossiers Travailleur
 -- =========================
 
-INSERT INTO dossier (libelle, id_type_demande) VALUES
+INSERT INTO dossier (libelle, id_type_visa) VALUES
 ('Autorisation emploi délivrée à Madagascar par le Ministère de la Fonction publique', 2),
 ('Attestation d’emploi délivrée par l’employeur (Original)', 2);
