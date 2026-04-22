@@ -27,8 +27,8 @@ INSERT INTO lieu (libelle) VALUES
 -- type_visa
 -- =========================
 INSERT INTO type_visa (libelle) VALUES
-('Transformable'),
-('Non transformable');
+('Investisseur'),
+('Travailleur');
 
 -- =========================
 -- statut_demande
@@ -45,8 +45,9 @@ INSERT INTO statut_demande (libelle) VALUES
 -- type_demande
 -- =========================
 INSERT INTO type_demande (libelle) VALUES
-('Investisseur'),
-('Travailleur');
+('Nouveau Titre'),
+('Duplicata(transfert de visa)'),
+('Duplicata(carte de resident)');
 
 -- =========================
 -- Dossiers Investisseur

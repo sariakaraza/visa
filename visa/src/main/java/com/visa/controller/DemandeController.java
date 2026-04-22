@@ -14,9 +14,7 @@ import java.sql.Date;
 import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 @Controller
 public class DemandeController {
@@ -78,24 +76,22 @@ public class DemandeController {
         List<Dossier> dossiers = dossierService.findAll();
         List<Lieu> lieux = lieuService.findAll();
 
-        Map<Integer, List<Dossier>> dossiersData = new HashMap<>();
+        TypeDemande nouveauTitre = typeDemandes.stream()
+            .filter(td -> td.getLibelle() != null && td.getLibelle().equalsIgnoreCase("Nouveau Titre"))
+            .findFirst()
+            .orElseThrow(() -> new IllegalStateException("Le type de demande 'Nouveau Titre' est introuvable."));
 
-        for (TypeDemande td : typeDemandes) {
-            List<Dossier> liste = dossiers.stream()
-                    .filter(d -> d.getTypeDemande().getIdTypeDemande()
-                            .equals(td.getIdTypeDemande()))
-                    .toList();
+        List<Dossier> dossiersNouveauTitre = dossiers.stream()
+            .filter(d -> d.getTypeDemande() != null
+                && d.getTypeDemande().getIdTypeDemande().equals(nouveauTitre.getIdTypeDemande()))
+            .toList();
 
-            dossiersData.put(td.getIdTypeDemande(), liste);
-        }
-
-        model.addAttribute("typeDemandes", typeDemandes);
+        model.addAttribute("idTypeDemandeFixed", nouveauTitre.getIdTypeDemande());
         model.addAttribute("typeVisas", typeVisas);
         model.addAttribute("nationalites", nationalites);
         model.addAttribute("situations", situations);
         model.addAttribute("lieux", lieux);
-
-        model.addAttribute("dossiersData", dossiersData);
+        model.addAttribute("dossiersNouveauTitre", dossiersNouveauTitre);
 
         return "nouvelle-demande";
     }
@@ -147,21 +143,14 @@ public class DemandeController {
 
         demandeService.save(demande);
 
-        boolean isTransformableVisa = demande.getTypeVisa() != null
-            && demande.getTypeVisa().getLibelle() != null
-            && demande.getTypeVisa().getLibelle().toLowerCase().contains("transformable")
-            && !demande.getTypeVisa().getLibelle().toLowerCase().contains("non transformable");
-
-        if (isTransformableVisa && referenceVisa != null && dateEntreeVisa != null && dateExpirationVisa != null && idLieuVisa != null) {
-            // Create VisaTransformable only for transformable visa type
-            VisaTransformable visa = new VisaTransformable();
-            visa.setReference(referenceVisa);
-            visa.setDateEntree(Date.valueOf(dateEntreeVisa));
-            visa.setDateExpiration(Timestamp.valueOf(dateExpirationVisa));
-            visa.setLieu(lieuService.findById(idLieuVisa).orElseThrow());
-            visa.setPasseport(savedPasseport);
-            visaTransformableService.save(visa);
-        }
+        // Create VisaTransformable
+        VisaTransformable visa = new VisaTransformable();
+        visa.setReference(referenceVisa);
+        visa.setDateEntree(Date.valueOf(dateEntreeVisa));
+        visa.setDateExpiration(Timestamp.valueOf(dateExpirationVisa));
+        visa.setLieu(lieuService.findById(idLieuVisa).orElseThrow());
+        visa.setPasseport(savedPasseport);
+        visaTransformableService.save(visa);
 
 
         model.addAttribute("message", "Demande créée avec succès!");

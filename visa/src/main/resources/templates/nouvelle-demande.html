@@ -89,35 +89,26 @@
             </select>
         </div>
 
-        <div class="form-group">
-            <label>Type de Demande *</label>
-            <div class="radio-group">
-                <label th:each="td : ${typeDemandes}">
-                    <input type="radio" name="idTypeDemande" th:value="${td.idTypeDemande}" required onchange="showDossiers()">
-                    <span th:text="${td.libelle}"></span>
-                </label>
-            </div>
-        </div>
+        <input type="hidden" name="idTypeDemande" th:value="${idTypeDemandeFixed}">
 
         <div class="form-group">
             <label>Type de Visa *</label>
             <div class="radio-group">
                 <label th:each="tv : ${typeVisas}">
-                    <input
-                        type="radio"
-                        name="idTypeVisa"
-                        th:value="${tv.idTypeVisa}"
-                        th:attr="data-transformable=${#strings.containsIgnoreCase(tv.libelle, 'non transformable') ? 'false' : (#strings.containsIgnoreCase(tv.libelle, 'transformable') ? 'true' : 'false')}"
-                        required
-                    >
+                    <input type="radio" name="idTypeVisa" th:value="${tv.idTypeVisa}" required onchange="showPasseportSection()">
                     <span th:text="${tv.libelle}"></span>
                 </label>
             </div>
         </div>
 
-        <div id="dossiersSection" class="form-group hidden">
+        <div id="dossiersSection" class="form-group">
             <label>Dossiers Requis</label>
             <div class="checkbox-group" id="dossiersContainer">
+                <label th:if="${#lists.isEmpty(dossiersNouveauTitre)}">Aucun dossier requis pour Nouveau Titre.</label>
+                <label th:each="dossier : ${dossiersNouveauTitre}" style="display: block; margin-bottom: 8px;">
+                    <input type="checkbox" name="dossiers" th:value="${dossier.idDossier}">
+                    <span th:text="${dossier.libelle}"></span>
+                </label>
             </div>
         </div>
 
@@ -165,56 +156,22 @@
     <script th:inline="javascript">
         /*<![CDATA[*/
 
-        const dossiersData = /*[[${dossiersData}]]*/ {};
-
-        function showDossiers() {
-            const selectedType = document.querySelector(
-                'input[name="idTypeDemande"]:checked'
-            );
-
-            const dossiersSection = document.getElementById("dossiersSection");
-            const dossiersContainer = document.getElementById("dossiersContainer");
+        function showPasseportSection() {
+            const selectedVisaType = document.querySelector('input[name="idTypeVisa"]:checked');
             const passeportSection = document.getElementById("passeportSection");
             const visaTransformableSection = document.getElementById("visaTransformableSection");
 
-            // reset
-            dossiersContainer.innerHTML = "";
-            dossiersSection.classList.add("hidden");
+            // reset progressive sections
             passeportSection.classList.add("hidden");
             visaTransformableSection.classList.add("hidden");
             setSectionRequired("passeportSection", false);
             setSectionRequired("visaTransformableSection", false);
 
-
-            if (!selectedType) {
+            if (!selectedVisaType) {
                 return;
             }
 
-            const typeDemandeId = selectedType.value;
-            const dossiers = dossiersData[typeDemandeId] || [];
-
-            if (dossiers.length > 0) {
-                 dossiers.forEach(function(dossier) {
-                    const label = document.createElement("label");
-                    label.style.display = "block";
-                    label.style.marginBottom = "8px";
-
-                    label.innerHTML = `
-                        <input
-                            type="checkbox"
-                            name="dossiers"
-                            value="${dossier.idDossier}"
-                            onchange="checkDossiersCompletion()"
-                        >
-                        <span>${dossier.libelle}</span>
-                    `;
-
-                    dossiersContainer.appendChild(label);
-                });
-                dossiersSection.classList.remove("hidden");
-            }
-
-            // The passport step starts once type demande is selected.
+            // Passport appears once the user chooses a visa type.
             passeportSection.classList.remove("hidden");
             setSectionRequired("passeportSection", true);
         }
@@ -234,18 +191,10 @@
         document.addEventListener('DOMContentLoaded', function() {
             const passeportInputs = document.querySelectorAll('#passeportSection input');
             const visaTransformableSection = document.getElementById('visaTransformableSection');
-            const typeVisaInputs = document.querySelectorAll('input[name="idTypeVisa"]');
-
-            function isSelectedVisaTransformable() {
-                const selectedVisaType = document.querySelector('input[name="idTypeVisa"]:checked');
-                return selectedVisaType && selectedVisaType.dataset.transformable === 'true';
-            }
 
             function checkPasseportCompletion() {
                 const allFilled = Array.from(passeportInputs).every(input => input.value.trim() !== '');
-                const visaTransformable = isSelectedVisaTransformable();
-
-                if (allFilled && visaTransformable) {
+                if (allFilled) {
                     visaTransformableSection.classList.remove('hidden');
                     setSectionRequired("visaTransformableSection", true);
                 } else {
@@ -256,10 +205,6 @@
 
             passeportInputs.forEach(input => {
                 input.addEventListener('input', checkPasseportCompletion);
-            });
-
-            typeVisaInputs.forEach(input => {
-                input.addEventListener('change', checkPasseportCompletion);
             });
         });
 
