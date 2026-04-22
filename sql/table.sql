@@ -134,3 +134,11 @@ CREATE TABLE visa_statut(
    FOREIGN KEY(id_visa) REFERENCES visa(id_visa),
    FOREIGN KEY(id_statut_visa) REFERENCES statut_visa(id_statut_visa)
 );
+
+CREATE TABLE dossier(
+   id_dossier SERIAL,
+   libelle VARCHAR(250) ,
+   id_type_demande INTEGER NOT NULL,
+   PRIMARY KEY(id_dossier),
+   FOREIGN KEY(id_type_demande) REFERENCES type_demande(id_type_demande)
+);

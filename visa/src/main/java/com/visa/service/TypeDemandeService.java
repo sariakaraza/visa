@@ -10,3 +10,4 @@ public interface TypeDemandeService {
     TypeDemande save(TypeDemande typeDemande);
     void deleteById(Integer id);
 }
+
