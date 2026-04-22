@@ -5,6 +5,7 @@ import com.visa.service.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -12,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import java.sql.Date;
 import java.sql.Timestamp;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -24,6 +26,15 @@ public class DemandeController {
 
     @Autowired
     private DemandeurService demandeurService;
+
+    @Autowired
+    private PasseportService passeportService;
+
+    @Autowired
+    private VisaTransformableService visaTransformableService;
+
+    @Autowired
+    private LieuService lieuService;
 
     @Autowired
     private TypeDemandeService typeDemandeService;
@@ -65,6 +76,7 @@ public class DemandeController {
         List<Nationalite> nationalites = nationaliteService.findAll();
         List<SituationFamiliale> situations = situationFamilialeService.findAll();
         List<Dossier> dossiers = dossierService.findAll();
+        List<Lieu> lieux = lieuService.findAll();
 
         Map<Integer, List<Dossier>> dossiersData = new HashMap<>();
 
@@ -81,6 +93,7 @@ public class DemandeController {
         model.addAttribute("typeVisas", typeVisas);
         model.addAttribute("nationalites", nationalites);
         model.addAttribute("situations", situations);
+        model.addAttribute("lieux", lieux);
 
         model.addAttribute("dossiersData", dossiersData);
 
@@ -97,6 +110,13 @@ public class DemandeController {
             @RequestParam Integer idSituationFamiliale,
             @RequestParam Integer idTypeDemande,
             @RequestParam Integer idTypeVisa,
+            @RequestParam String numeroPasseport,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime dateDelivrancePasseport,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime dateExpirationPasseport,
+            @RequestParam(required = false) String referenceVisa,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateEntreeVisa,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime dateExpirationVisa,
+            @RequestParam(required = false) Integer idLieuVisa,
             Model model) {
 
         // Create Demandeur
@@ -110,6 +130,14 @@ public class DemandeController {
 
         Demandeur savedDemandeur = demandeurService.save(demandeur);
 
+        // Create Passeport
+        Passeport passeport = new Passeport();
+        passeport.setNumero(numeroPasseport);
+        passeport.setDateDelivrance(Timestamp.valueOf(dateDelivrancePasseport));
+        passeport.setDateExpiration(Timestamp.valueOf(dateExpirationPasseport));
+        passeport.setDemandeur(savedDemandeur);
+        Passeport savedPasseport = passeportService.save(passeport);
+
         // Create Demande
         Demande demande = new Demande();
         demande.setDateDemande(new Timestamp(System.currentTimeMillis()));
@@ -118,6 +146,23 @@ public class DemandeController {
         demande.setDemandeur(savedDemandeur);
 
         demandeService.save(demande);
+
+        boolean isTransformableVisa = demande.getTypeVisa() != null
+            && demande.getTypeVisa().getLibelle() != null
+            && demande.getTypeVisa().getLibelle().toLowerCase().contains("transformable")
+            && !demande.getTypeVisa().getLibelle().toLowerCase().contains("non transformable");
+
+        if (isTransformableVisa && referenceVisa != null && dateEntreeVisa != null && dateExpirationVisa != null && idLieuVisa != null) {
+            // Create VisaTransformable only for transformable visa type
+            VisaTransformable visa = new VisaTransformable();
+            visa.setReference(referenceVisa);
+            visa.setDateEntree(Date.valueOf(dateEntreeVisa));
+            visa.setDateExpiration(Timestamp.valueOf(dateExpirationVisa));
+            visa.setLieu(lieuService.findById(idLieuVisa).orElseThrow());
+            visa.setPasseport(savedPasseport);
+            visaTransformableService.save(visa);
+        }
+
 
         model.addAttribute("message", "Demande créée avec succès!");
         return "redirect:/nouvelle-demande";
