@@ -14,7 +14,9 @@ import java.sql.Date;
 import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Controller
 public class DemandeController {
@@ -81,17 +83,21 @@ public class DemandeController {
             .findFirst()
             .orElseThrow(() -> new IllegalStateException("Le type de demande 'Nouveau Titre' est introuvable."));
 
-        List<Dossier> dossiersNouveauTitre = dossiers.stream()
-            .filter(d -> d.getTypeDemande() != null
-                && d.getTypeDemande().getIdTypeDemande().equals(nouveauTitre.getIdTypeDemande()))
-            .toList();
+        Map<Integer, List<Dossier>> dossiersByVisa = new HashMap<>();
+        for (TypeVisa typeVisa : typeVisas) {
+            List<Dossier> dossiersForVisa = dossiers.stream()
+                    .filter(d -> d.getTypeVisa() != null
+                            && d.getTypeVisa().getIdTypeVisa().equals(typeVisa.getIdTypeVisa()))
+                    .toList();
+            dossiersByVisa.put(typeVisa.getIdTypeVisa(), dossiersForVisa);
+        }
 
         model.addAttribute("idTypeDemandeFixed", nouveauTitre.getIdTypeDemande());
         model.addAttribute("typeVisas", typeVisas);
         model.addAttribute("nationalites", nationalites);
         model.addAttribute("situations", situations);
         model.addAttribute("lieux", lieux);
-        model.addAttribute("dossiersNouveauTitre", dossiersNouveauTitre);
+        model.addAttribute("dossiersByVisa", dossiersByVisa);
 
         return "nouvelle-demande";
     }

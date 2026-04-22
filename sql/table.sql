@@ -138,7 +138,7 @@ CREATE TABLE visa_statut(
 CREATE TABLE dossier(
    id_dossier SERIAL,
    libelle VARCHAR(250) ,
-   id_type_demande INTEGER NOT NULL,
+   id_type_visa INTEGER NOT NULL,
    PRIMARY KEY(id_dossier),
-   FOREIGN KEY(id_type_demande) REFERENCES type_demande(id_type_demande)
+   FOREIGN KEY(id_type_visa) REFERENCES type_visa(id_type_visa)
 );

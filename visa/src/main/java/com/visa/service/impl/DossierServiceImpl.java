@@ -4,7 +4,7 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import com.visa.entity.Dossier;
-import com.visa.entity.TypeDemande;
+import com.visa.entity.TypeVisa;
 import com.visa.repository.DossierRepository;
 import com.visa.service.DossierService;
 
@@ -35,7 +35,7 @@ public class DossierServiceImpl implements DossierService {
     }
 
     @Override
-    public List<Dossier> findByTypeDemande(TypeDemande typeDemande) {
-        return dossierRepository.findByTypeDemande(typeDemande);
+    public List<Dossier> findByTypeVisa(TypeVisa typeVisa) {
+        return dossierRepository.findByTypeVisa(typeVisa);
     }
 }
