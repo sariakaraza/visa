@@ -16,6 +16,14 @@ INSERT INTO nationalite (libelle) VALUES
 ('Malagasy');
 
 -- =========================
+-- lieu
+-- =========================
+INSERT INTO lieu (libelle) VALUES
+('Antsirabe'),
+('Antsiranana'),
+('Toamasina'),
+('Toliara');
+-- =========================
 -- type_visa
 -- =========================
 INSERT INTO type_visa (libelle) VALUES
