@@ -32,8 +32,9 @@ public class DemandeController {
     private final NationaliteService nationaliteService;
     private final SituationFamilialeService situationFamilialeService;
     private final DossierService dossierService;
+    private final PieceJustificativeService pieceJustificativeService;
 
-    public DemandeController(DemandeService demandeService, DemandeurService demandeurService, PasseportService passeportService, VisaTransformableService visaTransformableService, LieuService lieuService, TypeDemandeService typeDemandeService, TypeVisaService typeVisaService, NationaliteService nationaliteService, SituationFamilialeService situationFamilialeService, DossierService dossierService) {
+    public DemandeController(DemandeService demandeService, DemandeurService demandeurService, PasseportService passeportService, VisaTransformableService visaTransformableService, LieuService lieuService, TypeDemandeService typeDemandeService, TypeVisaService typeVisaService, NationaliteService nationaliteService, SituationFamilialeService situationFamilialeService, DossierService dossierService, PieceJustificativeService pieceJustificativeService) {
         this.demandeService = demandeService;
         this.demandeurService = demandeurService;
         this.passeportService = passeportService;
@@ -44,6 +45,7 @@ public class DemandeController {
         this.nationaliteService = nationaliteService;
         this.situationFamilialeService = situationFamilialeService;
         this.dossierService = dossierService;
+        this.pieceJustificativeService = pieceJustificativeService;
     }
 
     @GetMapping("/new")
@@ -99,6 +101,7 @@ public class DemandeController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateEntreeVisa,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime dateExpirationVisa,
             @RequestParam(required = false) Integer idLieuVisa,
+            @RequestParam(required = false) List<Integer> dossiers,
             Model model) {
 
         // Create Demandeur
@@ -140,6 +143,16 @@ public class DemandeController {
         visa.setPasseport(savedPasseport);
         visaTransformableService.save(visa);
 
+        // Create PieceJustificative for selected dossiers
+        if (dossiers != null) {
+            for (Integer idDossier : dossiers) {
+                PieceJustificative pj = new PieceJustificative();
+                pj.setDossier(dossierService.findById(idDossier).orElseThrow());
+                pj.setDemandeur(savedDemandeur);
+                pj.setDateAjout(new Timestamp(System.currentTimeMillis()));
+                pieceJustificativeService.save(pj);
+            }
+        }
 
         model.addAttribute("message", "Demande créée avec succès!");
         return "redirect:/demande/new";
