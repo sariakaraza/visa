@@ -166,6 +166,40 @@ public class DemandeController {
         return "demande/list";
     }
 
+    @GetMapping("/{id}")
+    public String viewDemande(@PathVariable Integer id, Model model) {
+        Demande demande = demandeService.findById(id).orElseThrow();
+
+        List<PieceJustificative> pieces = pieceJustificativeService.findAll().stream()
+                .filter(p -> p.getDemandeur().getIdDemandeur().equals(demande.getDemandeur().getIdDemandeur()))
+                .toList();
+
+        Passeport passeport = passeportService.findAll().stream()
+                .filter(p -> p.getDemandeur().getIdDemandeur().equals(demande.getDemandeur().getIdDemandeur()))
+                .findFirst()
+                .orElse(null);
+
+        VisaTransformable visaTransformable = null;
+        Lieu lieu = null;
+        if (passeport != null) {
+            visaTransformable = visaTransformableService.findAll().stream()
+                    .filter(v -> v.getPasseport() != null && v.getPasseport().getIdPasseport().equals(passeport.getIdPasseport()))
+                    .findFirst()
+                    .orElse(null);
+            if (visaTransformable != null) {
+                lieu = visaTransformable.getLieu();
+            }
+        }
+
+        model.addAttribute("demande", demande);
+        model.addAttribute("pieces", pieces);
+        model.addAttribute("passeport", passeport);
+        model.addAttribute("visaTransformable", visaTransformable);
+        model.addAttribute("lieu", lieu);
+
+        return "demande/view";
+    }
+
     @GetMapping("/edit/{id}")
     public String editForm(@PathVariable Integer id, Model model) {
         Demande demande = demandeService.findById(id).orElseThrow();

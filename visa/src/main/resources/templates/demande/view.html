@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Détail Demande</title>
+    <link rel="stylesheet" th:href="@{/css/demande.css}">
+</head>
+<body>
+    <div class="app">
+        <aside class="sidebar">
+            <div class="sidebar-title">Demande</div>
+            <nav class="sidebar-nav">
+                <a th:href="@{/demande/new}">Ajout</a>
+                <a th:href="@{/demande/list}">Liste</a>
+            </nav>
+        </aside>
+
+        <main class="content">
+            <div class="container">
+                <h1>Détail de la Demande</h1>
+
+                <dl class="kv">
+                    <dt>ID</dt>
+                    <dd th:text="${demande.idDemande}"></dd>
+
+                    <dt>Date demande</dt>
+                    <dd th:text="${#dates.format(demande.dateDemande, 'dd/MM/yyyy HH:mm')}"></dd>
+
+                    <dt>Type demande</dt>
+                    <dd th:text="${demande.typeDemande.libelle}"></dd>
+
+                    <dt>Type visa</dt>
+                    <dd th:text="${demande.typeVisa.libelle}"></dd>
+
+                    <dt>Demandeur</dt>
+                    <dd th:text="${demande.demandeur.nom + ' ' + demande.demandeur.prenom}"></dd>
+
+                    <dt>Date naissance</dt>
+                    <dd th:text="${#dates.format(demande.demandeur.dateNaissance, 'dd/MM/yyyy')}"></dd>
+
+                    <dt>Adresse</dt>
+                    <dd th:text="${demande.demandeur.adresse}"></dd>
+
+                    <dt>Téléphone</dt>
+                    <dd th:text="${demande.demandeur.telephone}"></dd>
+
+                    <dt>Nationalité</dt>
+                    <dd th:text="${demande.demandeur.nationalite.libelle}"></dd>
+
+                    <dt>Situation familiale</dt>
+                    <dd th:text="${demande.demandeur.situationFamiliale.libelle}"></dd>
+                </dl>
+
+                <h2>Passeport</h2>
+                <div th:if="${passeport == null}">Aucun passeport trouvé.</div>
+                <dl class="kv" th:if="${passeport != null}">
+                    <dt>Numéro</dt>
+                    <dd th:text="${passeport.numero}"></dd>
+
+                    <dt>Date délivrance</dt>
+                    <dd th:text="${#dates.format(passeport.dateDelivrance, 'dd/MM/yyyy HH:mm')}"></dd>
+
+                    <dt>Date expiration</dt>
+                    <dd th:text="${#dates.format(passeport.dateExpiration, 'dd/MM/yyyy HH:mm')}"></dd>
+                </dl>
+
+                <h2>Visa transformable</h2>
+                <div th:if="${visaTransformable == null}">Aucun visa transformable trouvé.</div>
+                <dl class="kv" th:if="${visaTransformable != null}">
+                    <dt>Référence</dt>
+                    <dd th:text="${visaTransformable.reference}"></dd>
+
+                    <dt>Date entrée</dt>
+                    <dd th:text="${#dates.format(visaTransformable.dateEntree, 'dd/MM/yyyy')}"></dd>
+
+                    <dt>Date expiration</dt>
+                    <dd th:text="${#dates.format(visaTransformable.dateExpiration, 'dd/MM/yyyy HH:mm')}"></dd>
+
+                    <dt>Lieu</dt>
+                    <dd th:text="${lieu != null ? lieu.libelle : ''}"></dd>
+                </dl>
+
+                <h2>Dossiers / pièces justificatives</h2>
+                <div th:if="${pieces == null || #lists.isEmpty(pieces)}">Aucune pièce justificative.</div>
+                <table class="table" th:if="${pieces != null && !#lists.isEmpty(pieces)}">
+                    <thead>
+                        <tr>
+                            <th>Dossier</th>
+                            <th>Date ajout</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="p : ${pieces}">
+                            <td th:text="${p.dossier.libelle}"></td>
+                            <td th:text="${#dates.format(p.dateAjout, 'dd/MM/yyyy HH:mm')}"></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+</body>
+</html>
