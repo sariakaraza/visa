@@ -2,12 +2,12 @@ package com.visa.controller;
 
 import com.visa.entity.*;
 import com.visa.service.*;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import java.sql.Date;
@@ -19,56 +19,34 @@ import java.util.List;
 import java.util.Map;
 
 @Controller
+@RequestMapping("/demande")
 public class DemandeController {
 
-    @Autowired
-    private DemandeService demandeService;
+    private final DemandeService demandeService;
+    private final DemandeurService demandeurService;
+    private final PasseportService passeportService;
+    private final VisaTransformableService visaTransformableService;
+    private final LieuService lieuService;
+    private final TypeDemandeService typeDemandeService;
+    private final TypeVisaService typeVisaService;
+    private final NationaliteService nationaliteService;
+    private final SituationFamilialeService situationFamilialeService;
+    private final DossierService dossierService;
 
-    @Autowired
-    private DemandeurService demandeurService;
+    public DemandeController(DemandeService demandeService, DemandeurService demandeurService, PasseportService passeportService, VisaTransformableService visaTransformableService, LieuService lieuService, TypeDemandeService typeDemandeService, TypeVisaService typeVisaService, NationaliteService nationaliteService, SituationFamilialeService situationFamilialeService, DossierService dossierService) {
+        this.demandeService = demandeService;
+        this.demandeurService = demandeurService;
+        this.passeportService = passeportService;
+        this.visaTransformableService = visaTransformableService;
+        this.lieuService = lieuService;
+        this.typeDemandeService = typeDemandeService;
+        this.typeVisaService = typeVisaService;
+        this.nationaliteService = nationaliteService;
+        this.situationFamilialeService = situationFamilialeService;
+        this.dossierService = dossierService;
+    }
 
-    @Autowired
-    private PasseportService passeportService;
-
-    @Autowired
-    private VisaTransformableService visaTransformableService;
-
-    @Autowired
-    private LieuService lieuService;
-
-    @Autowired
-    private TypeDemandeService typeDemandeService;
-
-    @Autowired
-    private TypeVisaService typeVisaService;
-
-    @Autowired
-    private NationaliteService nationaliteService;
-
-    @Autowired
-    private SituationFamilialeService situationFamilialeService;
-
-    @Autowired
-    private DossierService dossierService;
-
-    // @GetMapping("/nouvelle-demande")
-    // public String showForm(Model model) {
-    //     List<TypeDemande> typeDemandes = typeDemandeService.findAll();
-    //     List<TypeVisa> typeVisas = typeVisaService.findAll();
-    //     List<Nationalite> nationalites = nationaliteService.findAll();
-    //     List<SituationFamiliale> situations = situationFamilialeService.findAll();
-    //     List<Dossier> dossiers = dossierService.findAll();
-
-    //     model.addAttribute("typeDemandes", typeDemandes);
-    //     model.addAttribute("typeVisas", typeVisas);
-    //     model.addAttribute("nationalites", nationalites);
-    //     model.addAttribute("situations", situations);
-    //     model.addAttribute("dossiers", dossiers);
-
-    //     return "nouvelle-demande";
-    // }
-
-    @GetMapping("/nouvelle-demande")
+    @GetMapping("/new")
     public String showForm(Model model) {
 
         List<TypeDemande> typeDemandes = typeDemandeService.findAll();
@@ -99,20 +77,22 @@ public class DemandeController {
         model.addAttribute("lieux", lieux);
         model.addAttribute("dossiersByVisa", dossiersByVisa);
 
-        return "nouvelle-demande";
+        return "demande/form";
     }
 
-    @PostMapping("/nouvelle-demande")
+    @PostMapping("/new")
     public String submitForm(
-            @RequestParam String nom,
+            @RequestParam(required = true) String nom,
             @RequestParam String prenom,
-            @RequestParam Date dateNaissance,
-            @RequestParam String adresse,
-            @RequestParam Integer idNationalite,
-            @RequestParam Integer idSituationFamiliale,
-            @RequestParam Integer idTypeDemande,
-            @RequestParam Integer idTypeVisa,
-            @RequestParam String numeroPasseport,
+            @RequestParam(required = true) Date dateNaissance,
+            @RequestParam(required = false) String nomJeuneFille,
+            @RequestParam(required = false) String telephone,
+            @RequestParam(required = true) String adresse,
+            @RequestParam(required = true) Integer idNationalite,
+            @RequestParam(required = true) Integer idSituationFamiliale,
+            @RequestParam(required = true) Integer idTypeDemande,
+            @RequestParam(required = true) Integer idTypeVisa,
+            @RequestParam(required = true) String numeroPasseport,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime dateDelivrancePasseport,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime dateExpirationPasseport,
             @RequestParam(required = false) String referenceVisa,
@@ -129,6 +109,8 @@ public class DemandeController {
         demandeur.setAdresse(adresse);
         demandeur.setNationalite(nationaliteService.findById(idNationalite).orElseThrow());
         demandeur.setSituationFamiliale(situationFamilialeService.findById(idSituationFamiliale).orElseThrow());
+        demandeur.setNomJeuneFille(nomJeuneFille);
+        demandeur.setTelephone(telephone);
 
         Demandeur savedDemandeur = demandeurService.save(demandeur);
 
@@ -160,6 +142,13 @@ public class DemandeController {
 
 
         model.addAttribute("message", "Demande créée avec succès!");
-        return "redirect:/nouvelle-demande";
+        return "redirect:/demande/new";
+    }
+
+    @GetMapping("/list")
+    public String listDemandes(Model model) {
+        List<Demande> demandes = demandeService.findAll();
+        model.addAttribute("demandes", demandes);
+        return "demande/list";
     }
 }
