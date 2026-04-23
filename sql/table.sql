@@ -142,3 +142,13 @@ CREATE TABLE dossier(
    PRIMARY KEY(id_dossier),
    FOREIGN KEY(id_type_visa) REFERENCES type_visa(id_type_visa)
 );
+
+CREATE TABLE piece_justificative(
+   id_piece_justificative SERIAL,
+   date_ajout TIMESTAMP,
+   id_dossier INTEGER NOT NULL,
+   id_demandeur INTEGER NOT NULL,
+   PRIMARY KEY(id_piece_justificative),
+   FOREIGN KEY(id_dossier) REFERENCES dossier(id_dossier),
+   FOREIGN KEY(id_demandeur) REFERENCES demandeur(id_demandeur)
+);
