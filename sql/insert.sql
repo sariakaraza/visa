@@ -22,6 +22,9 @@ INSERT INTO lieu (libelle) VALUES
 ('Antsirabe'),
 ('Antsiranana'),
 ('Toamasina'),
+('Antananarivo'),
+('Fianarantsoa'),
+('Mahajanga'),
 ('Toliara');
 -- =========================
 -- type_visa
