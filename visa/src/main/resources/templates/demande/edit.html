@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Modifier Demande de Visa</title>
+    <link rel="stylesheet" th:href="@{/css/demande.css}">
+</head>
+<body>
+    <div class="app">
+        <aside class="sidebar">
+            <div class="sidebar-title">Demande</div>
+            <nav class="sidebar-nav">
+                <a th:href="@{/demande/new}">Ajout</a>
+                <a th:href="@{/demande/list}">Liste</a>
+            </nav>
+        </aside>
+
+        <main class="content">
+            <div class="container">
+                <h1>Modifier Demande de Visa</h1>
+
+                <form th:action="@{/demande/edit}" method="post">
+                    <input type="hidden" name="id" th:value="${demande.idDemande}">
+
+        <div class="form-group">
+            <label for="nom">Nom *</label>
+            <input type="text" id="nom" name="nom" th:value="${demande.demandeur.nom}" required>
+        </div>
+
+        <div class="form-group">
+            <label for="prenom">Prénom</label>
+            <input type="text" id="prenom" name="prenom" th:value="${demande.demandeur.prenom}">
+        </div>
+
+        <div class="form-group">
+            <label for="dateNaissance">Date de Naissance *</label>
+            <input type="date" id="dateNaissance" name="dateNaissance" th:value="${#dates.format(demande.demandeur.dateNaissance, 'yyyy-MM-dd')}" required>
+        </div>
+
+        <div class="form-group">
+            <label for="nomJeuneFille">Nom de Jeune Fille</label>
+            <input type="text" id="nomJeuneFille" name="nomJeuneFille" th:value="${demande.demandeur.nomJeuneFille}">
+        </div>
+
+        <div class="form-group">
+            <label for="telephone">Téléphone</label>
+            <input type="text" id="telephone" name="telephone" th:value="${demande.demandeur.telephone}">
+        </div>
+
+        <div class="form-group">
+            <label for="adresse">Adresse *</label>
+            <input type="text" id="adresse" name="adresse" th:value="${demande.demandeur.adresse}" required>
+        </div>
+
+        <div class="form-group">
+            <label for="idNationalite">Nationalité *</label>
+            <select id="idNationalite" name="idNationalite" required>
+                <option value="">Sélectionnez une nationalité</option>
+                <option th:each="nationalite : ${nationalites}" th:value="${nationalite.idNationalite}" th:text="${nationalite.libelle}" th:selected="${demande.demandeur.nationalite.idNationalite == nationalite.idNationalite}"></option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="idSituationFamiliale">Situation Familiale *</label>
+            <select id="idSituationFamiliale" name="idSituationFamiliale" required>
+                <option value="">Sélectionnez une situation familiale</option>
+                <option th:each="situation : ${situations}" th:value="${situation.idSituationFamiliale}" th:text="${situation.libelle}" th:selected="${demande.demandeur.situationFamiliale.idSituationFamiliale == situation.idSituationFamiliale}"></option>
+            </select>
+        </div>
+
+        <input type="hidden" name="idTypeDemande" th:value="${idTypeDemandeFixed}">
+
+        <div class="form-group">
+            <label for="idTypeVisa">Type de Visa *</label>
+            <select id="idTypeVisa" name="idTypeVisa" required onchange="updateDossiers()">
+                <option value="">Sélectionnez un type de visa</option>
+                <option th:each="typeVisa : ${typeVisas}" th:value="${typeVisa.idTypeVisa}" th:text="${typeVisa.libelle}" th:selected="${demande.typeVisa.idTypeVisa == typeVisa.idTypeVisa}"></option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>Dossiers requis</label>
+            <div th:each="typeVisa : ${typeVisas}" class="dossier-group" th:id="'dossiers-' + ${typeVisa.idTypeVisa}" th:classappend="${demande.typeVisa.idTypeVisa == typeVisa.idTypeVisa} ? '' : 'hidden'">
+                <div th:each="dossier : ${dossiersByVisa[typeVisa.idTypeVisa]}" class="checkbox-group">
+                    <input type="checkbox" th:id="'dossier-' + ${dossier.idDossier}" th:name="'dossiers'" th:value="${dossier.idDossier}" th:checked="${#lists.contains(selectedDossiers, dossier.idDossier)}">
+                    <label th:for="'dossier-' + ${dossier.idDossier}" th:text="${dossier.libelle}"></label>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="numeroPasseport">Numéro de Passeport *</label>
+            <input type="text" id="numeroPasseport" name="numeroPasseport" th:value="${passeport.numero}" required>
+        </div>
+
+        <div class="form-group">
+            <label for="dateDelivrancePasseport">Date de Délivrance du Passeport</label>
+            <input type="datetime-local" id="dateDelivrancePasseport" name="dateDelivrancePasseport" th:value="${#dates.format(passeport.dateDelivrance, 'yyyy-MM-dd''T''HH:mm')}">
+        </div>
+
+        <div class="form-group">
+            <label for="dateExpirationPasseport">Date d'Expiration du Passeport</label>
+            <input type="datetime-local" id="dateExpirationPasseport" name="dateExpirationPasseport" th:value="${#dates.format(passeport.dateExpiration, 'yyyy-MM-dd''T''HH:mm')}">
+        </div>
+
+        <div class="form-group">
+            <label for="referenceVisa">Référence Visa</label>
+            <input type="text" id="referenceVisa" name="referenceVisa" th:value="${visaTransformable.reference}">
+        </div>
+
+        <div class="form-group">
+            <label for="dateEntreeVisa">Date d'Entrée Visa</label>
+            <input type="date" id="dateEntreeVisa" name="dateEntreeVisa" th:value="${#dates.format(visaTransformable.dateEntree, 'yyyy-MM-dd')}">
+        </div>
+
+        <div class="form-group">
+            <label for="dateExpirationVisa">Date d'Expiration Visa</label>
+            <input type="datetime-local" id="dateExpirationVisa" name="dateExpirationVisa" th:value="${#dates.format(visaTransformable.dateExpiration, 'yyyy-MM-dd''T''HH:mm')}">
+        </div>
+
+        <div class="form-group">
+            <label for="idLieuVisa">Lieu Visa</label>
+            <select id="idLieuVisa" name="idLieuVisa">
+                <option value="">Sélectionnez un lieu</option>
+                <option th:each="lieu : ${lieux}" th:value="${lieu.idLieu}" th:text="${lieu.libelle}" th:selected="${lieu.idLieu == lieu.idLieu}"></option>
+            </select>
+        </div>
+
+                    <button type="submit">Mettre à Jour</button>
+                </form>
+            </div>
+        </main>
+    </div>
+
+    <script th:inline="javascript">
+        function updateDossiers() {
+            const typeVisaSelect = document.getElementById('idTypeVisa');
+            const selectedTypeVisa = typeVisaSelect.value;
+            const dossierGroups = document.querySelectorAll('.dossier-group');
+            dossierGroups.forEach(group => {
+                group.classList.add('hidden');
+            });
+            if (selectedTypeVisa) {
+                const selectedGroup = document.getElementById('dossiers-' + selectedTypeVisa);
+                if (selectedGroup) {
+                    selectedGroup.classList.remove('hidden');
+                }
+            }
+        }
+        // Initialize on load
+        updateDossiers();
+    </script>
+</body>
+</html>

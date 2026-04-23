@@ -1,6 +1,8 @@
 package com.visa.service.impl;
 
 import java.util.List;
+import java.util.Optional;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import com.visa.entity.Dossier;
@@ -20,8 +22,8 @@ public class DossierServiceImpl implements DossierService {
     }
 
     @Override
-    public Dossier findById(Integer id) {
-        return dossierRepository.findById(id).orElse(null);
+    public Optional<Dossier> findById(Integer id) {
+        return dossierRepository.findById(id);
     }
 
     @Override

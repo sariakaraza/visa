@@ -6,6 +6,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -32,8 +33,9 @@ public class DemandeController {
     private final NationaliteService nationaliteService;
     private final SituationFamilialeService situationFamilialeService;
     private final DossierService dossierService;
+    private final PieceJustificativeService pieceJustificativeService;
 
-    public DemandeController(DemandeService demandeService, DemandeurService demandeurService, PasseportService passeportService, VisaTransformableService visaTransformableService, LieuService lieuService, TypeDemandeService typeDemandeService, TypeVisaService typeVisaService, NationaliteService nationaliteService, SituationFamilialeService situationFamilialeService, DossierService dossierService) {
+    public DemandeController(DemandeService demandeService, DemandeurService demandeurService, PasseportService passeportService, VisaTransformableService visaTransformableService, LieuService lieuService, TypeDemandeService typeDemandeService, TypeVisaService typeVisaService, NationaliteService nationaliteService, SituationFamilialeService situationFamilialeService, DossierService dossierService, PieceJustificativeService pieceJustificativeService) {
         this.demandeService = demandeService;
         this.demandeurService = demandeurService;
         this.passeportService = passeportService;
@@ -44,6 +46,7 @@ public class DemandeController {
         this.nationaliteService = nationaliteService;
         this.situationFamilialeService = situationFamilialeService;
         this.dossierService = dossierService;
+        this.pieceJustificativeService = pieceJustificativeService;
     }
 
     @GetMapping("/new")
@@ -99,6 +102,7 @@ public class DemandeController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateEntreeVisa,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime dateExpirationVisa,
             @RequestParam(required = false) Integer idLieuVisa,
+            @RequestParam(required = false) List<Integer> dossiers,
             Model model) {
 
         // Create Demandeur
@@ -140,9 +144,19 @@ public class DemandeController {
         visa.setPasseport(savedPasseport);
         visaTransformableService.save(visa);
 
+        // Create PieceJustificative for selected dossiers
+        if (dossiers != null) {
+            for (Integer idDossier : dossiers) {
+                PieceJustificative pj = new PieceJustificative();
+                pj.setDossier(dossierService.findById(idDossier).orElseThrow());
+                pj.setDemandeur(savedDemandeur);
+                pj.setDateAjout(new Timestamp(System.currentTimeMillis()));
+                pieceJustificativeService.save(pj);
+            }
+        }
 
         model.addAttribute("message", "Demande créée avec succès!");
-        return "redirect:/demande/new";
+        return "redirect:/demande/list";
     }
 
     @GetMapping("/list")
@@ -150,5 +164,122 @@ public class DemandeController {
         List<Demande> demandes = demandeService.findAll();
         model.addAttribute("demandes", demandes);
         return "demande/list";
+    }
+
+    @GetMapping("/{id}")
+    public String viewDemande(@PathVariable Integer id, Model model) {
+        Demande demande = demandeService.findById(id).orElseThrow();
+
+        List<PieceJustificative> pieces = pieceJustificativeService.findAll().stream()
+                .filter(p -> p.getDemandeur().getIdDemandeur().equals(demande.getDemandeur().getIdDemandeur()))
+                .toList();
+
+        Passeport passeport = passeportService.findAll().stream()
+                .filter(p -> p.getDemandeur().getIdDemandeur().equals(demande.getDemandeur().getIdDemandeur()))
+                .findFirst()
+                .orElse(null);
+
+        VisaTransformable visaTransformable = null;
+        Lieu lieu = null;
+        if (passeport != null) {
+            visaTransformable = visaTransformableService.findAll().stream()
+                    .filter(v -> v.getPasseport() != null && v.getPasseport().getIdPasseport().equals(passeport.getIdPasseport()))
+                    .findFirst()
+                    .orElse(null);
+            if (visaTransformable != null) {
+                lieu = visaTransformable.getLieu();
+            }
+        }
+
+        model.addAttribute("demande", demande);
+        model.addAttribute("pieces", pieces);
+        model.addAttribute("passeport", passeport);
+        model.addAttribute("visaTransformable", visaTransformable);
+        model.addAttribute("lieu", lieu);
+
+        return "demande/view";
+    }
+
+    @GetMapping("/edit/{id}")
+    public String editForm(@PathVariable Integer id, Model model) {
+        Demande demande = demandeService.findById(id).orElseThrow();
+
+        List<PieceJustificative> pieces = pieceJustificativeService.findAll().stream()
+            .filter(p -> p.getDemandeur().getIdDemandeur().equals(demande.getDemandeur().getIdDemandeur()))
+            .toList();
+
+        List<Integer> selectedDossiers = pieces.stream().map(p -> p.getDossier().getIdDossier()).toList();
+
+        List<TypeDemande> typeDemandes = typeDemandeService.findAll();
+        List<TypeVisa> typeVisas = typeVisaService.findAll();
+        List<Nationalite> nationalites = nationaliteService.findAll();
+        List<SituationFamiliale> situations = situationFamilialeService.findAll();
+        List<Dossier> dossiers = dossierService.findAll();
+        List<Lieu> lieux = lieuService.findAll();
+
+        TypeDemande nouveauTitre = typeDemandes.stream()
+            .filter(td -> td.getLibelle() != null && td.getLibelle().equalsIgnoreCase("Nouveau Titre"))
+            .findFirst()
+            .orElseThrow(() -> new IllegalStateException("Le type de demande 'Nouveau Titre' est introuvable."));
+
+        Map<Integer, List<Dossier>> dossiersByVisa = new HashMap<>();
+        for (TypeVisa typeVisa : typeVisas) {
+            List<Dossier> dossiersForVisa = dossiers.stream()
+                    .filter(d -> d.getTypeVisa() != null
+                            && d.getTypeVisa().getIdTypeVisa().equals(typeVisa.getIdTypeVisa()))
+                    .toList();
+            dossiersByVisa.put(typeVisa.getIdTypeVisa(), dossiersForVisa);
+        }
+
+        Passeport passeport = passeportService.findAll().stream()
+            .filter(p -> p.getDemandeur().getIdDemandeur().equals(demande.getDemandeur().getIdDemandeur()))
+            .findFirst()
+            .orElse(null);
+
+        VisaTransformable visaTransformable = visaTransformableService.findAll().stream()
+            .filter(v -> v.getPasseport().getIdPasseport().equals(passeport.getIdPasseport()))
+            .findFirst()
+            .orElse(null);
+
+        Lieu lieu = visaTransformable.getLieu();
+
+        model.addAttribute("demande", demande);
+        model.addAttribute("passeport", passeport);
+        model.addAttribute("lieu", lieu);
+        model.addAttribute("visaTransformable", visaTransformable);
+        model.addAttribute("selectedDossiers", selectedDossiers);
+        model.addAttribute("idTypeDemandeFixed", nouveauTitre.getIdTypeDemande());
+        model.addAttribute("typeVisas", typeVisas);
+        model.addAttribute("nationalites", nationalites);
+        model.addAttribute("situations", situations);
+        model.addAttribute("lieux", lieux);
+        model.addAttribute("dossiersByVisa", dossiersByVisa);
+
+        return "demande/edit";
+    }
+
+    @PostMapping("/edit")
+    public String updateForm(@RequestParam Integer id, @RequestParam(required = false) List<Integer> dossiers, Model model) {
+        Demande demande = demandeService.findById(id).orElseThrow();
+        Demandeur demandeur = demande.getDemandeur();
+
+        List<Integer> existing = pieceJustificativeService.findAll().stream()
+            .filter(p -> p.getDemandeur().getIdDemandeur().equals(demandeur.getIdDemandeur()))
+            .map(p -> p.getDossier().getIdDossier())
+            .toList();
+
+        if (dossiers != null) {
+            for (Integer dossierId : dossiers) {
+                if (!existing.contains(dossierId)) {
+                    PieceJustificative pj = new PieceJustificative();
+                    pj.setDateAjout(new Timestamp(System.currentTimeMillis()));
+                    pj.setDossier(dossierService.findById(dossierId).orElseThrow());
+                    pj.setDemandeur(demandeur);
+                    pieceJustificativeService.save(pj);
+                }
+            }
+        }
+
+        return "redirect:/demande/list";
     }
 }

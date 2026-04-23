@@ -1,60 +1,29 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
+    <meta charset="UTF-8">
     <title>Nouvelle Demande de Visa</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            max-width: 800px;
-            margin: 50px auto;
-            padding: 20px;
-        }
-        .form-group {
-            margin-bottom: 20px;
-        }
-        label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: bold;
-        }
-        input[type="text"], input[type="date"], input[type="datetime-local"], select {
-            width: 100%;
-            padding: 8px;
-            box-sizing: border-box;
-            margin-bottom: 10px;
-        }
-        .radio-group, .checkbox-group {
-            margin-bottom: 10px;
-        }
-        .radio-group label, .checkbox-group label {
-            display: inline-block;
-            margin-right: 15px;
-            font-weight: normal;
-        }
-        .hidden {
-            display: none;
-        }
-        button {
-            background-color: #4CAF50;
-            color: white;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-        button:hover {
-            background-color: #45a049;
-        }
-    </style>
+    <link rel="stylesheet" th:href="@{/css/demande.css}">
 </head>
 <body>
-    <h1>Formulaire de Nouvelle Demande de Visa</h1>
+    <div class="app">
+        <aside class="sidebar">
+            <div class="sidebar-title">Demande</div>
+            <nav class="sidebar-nav">
+                <a th:href="@{/demande/new}">Ajout</a>
+                <a th:href="@{/demande/list}">Liste</a>
+            </nav>
+        </aside>
 
-    <form th:action="@{/demande/new}" method="post">
-        <div class="form-group">
-            <label for="nom">Nom *</label>
-            <input type="text" id="nom" name="nom" required>
-        </div>
+        <main class="content">
+            <div class="container">
+                <h1>Formulaire de Nouvelle Demande de Visa</h1>
+
+                <form th:action="@{/demande/new}" method="post">
+                    <div class="form-group">
+                        <label for="nom">Nom *</label>
+                        <input type="text" id="nom" name="nom" required>
+                    </div>
 
         <div class="form-group">
             <label for="prenom">Prénom</label>
@@ -155,8 +124,11 @@
             </div>
         </div>
 
-        <button type="submit">Soumettre</button>
-    </form>
+                    <button type="submit">Soumettre</button>
+                </form>
+            </div>
+        </main>
+    </div>
 
     <script th:inline="javascript">
         /*<![CDATA[*/

@@ -1,53 +1,57 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
+    <meta charset="UTF-8">
     <title>Liste des Demandes</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            max-width: 1200px;
-            margin: 50px auto;
-            padding: 20px;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        th, td {
-            border: 1px solid #ddd;
-            padding: 8px;
-            text-align: left;
-        }
-        th {
-            background-color: #f2f2f2;
-        }
-    </style>
+    <link rel="stylesheet" th:href="@{/css/demande.css}">
 </head>
 <body>
-    <h1>Liste des Demandes de Visa</h1>
-    <table>
-        <thead>
-            <tr>
-                <th>ID</th>
-                <th>Date Demande</th>
-                <th>Type Demande</th>
-                <th>Type Visa</th>
-                <th>Demandeur</th>
-                <th>Nationalité</th>
-                <th>Statut</th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr th:each="demande : ${demandes}">
-                <td th:text="${demande.idDemande}"></td>
-                <td th:text="${#dates.format(demande.dateDemande, 'dd/MM/yyyy HH:mm')}"></td>
-                <td th:text="${demande.typeDemande.libelle}"></td>
-                <td th:text="${demande.typeVisa.libelle}"></td>
-                <td th:text="${demande.demandeur.nom + ' ' + demande.demandeur.prenom}"></td>
-                <td th:text="${demande.demandeur.nationalite.libelle}"></td>
-                <td>Demande créée</td>
-            </tr>
-        </tbody>
-    </table>
+    <div class="app">
+        <aside class="sidebar">
+            <div class="sidebar-title">Demande</div>
+            <nav class="sidebar-nav">
+                <a th:href="@{/demande/new}">Ajout</a>
+                <a th:href="@{/demande/list}">Liste</a>
+            </nav>
+        </aside>
+
+        <main class="content">
+            <div class="container">
+                <h1>Liste des Demandes de Visa</h1>
+
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Date Demande</th>
+                            <th>Type Demande</th>
+                            <th>Type Visa</th>
+                            <th>Demandeur</th>
+                            <th>Nationalité</th>
+                            <th>Statut</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="demande : ${demandes}">
+                            <td th:text="${demande.idDemande}"></td>
+                            <td th:text="${#dates.format(demande.dateDemande, 'dd/MM/yyyy HH:mm')}"></td>
+                            <td th:text="${demande.typeDemande.libelle}"></td>
+                            <td th:text="${demande.typeVisa.libelle}"></td>
+                            <td th:text="${demande.demandeur.nom + ' ' + demande.demandeur.prenom}"></td>
+                            <td th:text="${demande.demandeur.nationalite.libelle}"></td>
+                            <td>Demande créée</td>
+                            <td>
+                                <div class="actions">
+                                    <a class="btn btn-secondary" th:href="@{/demande/{id}(id=${demande.idDemande})}">Voir</a>
+                                    <a class="btn" th:href="@{/demande/edit/{id}(id=${demande.idDemande})}">Modifier</a>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
 </body>
 </html>
