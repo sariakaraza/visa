@@ -159,6 +159,120 @@ public class DemandeController {
         return "redirect:/demande/list";
     }
 
+    @PostMapping("/transfert-visa")
+    public String submitTransfertVisa(
+            @RequestParam(required = true) String nom,
+            @RequestParam(required = false) String prenom,
+            @RequestParam(required = true) Date dateNaissance,
+            @RequestParam(required = false) String nomJeuneFille,
+            @RequestParam(required = false) String telephone,
+            @RequestParam(required = true) String adresse,
+            @RequestParam(required = true) Integer idNationalite,
+            @RequestParam(required = true) Integer idSituationFamiliale,
+            @RequestParam(required = true) Integer idTypeDemande,
+            @RequestParam(required = true) Integer idTypeVisa,
+            @RequestParam(required = true) String numeroPasseport,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime dateDelivrancePasseport,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime dateExpirationPasseport,
+            @RequestParam(required = false) String referenceVisa,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateEntreeVisa,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime dateExpirationVisa,
+            @RequestParam(required = false) Integer idLieuVisa,
+            Model model) {
+
+        Demandeur demandeur = new Demandeur();
+        demandeur.setNom(nom);
+        demandeur.setPrenom(prenom);
+        demandeur.setDateNaissance(dateNaissance);
+        demandeur.setAdresse(adresse);
+        demandeur.setNomJeuneFille(nomJeuneFille);
+        demandeur.setTelephone(telephone);
+
+        Nationalite nat = new Nationalite();
+        nat.setIdNationalite(idNationalite);
+        demandeur.setNationalite(nat);
+
+        SituationFamiliale sit = new SituationFamiliale();
+        sit.setIdSituationFamiliale(idSituationFamiliale);
+        demandeur.setSituationFamiliale(sit);
+
+        Passeport passeport = new Passeport();
+        passeport.setNumero(numeroPasseport);
+        passeport.setDateDelivrance(Timestamp.valueOf(dateDelivrancePasseport));
+        passeport.setDateExpiration(Timestamp.valueOf(dateExpirationPasseport));
+
+        Visa visa = new Visa();
+        visa.setReference(referenceVisa);
+        if (dateEntreeVisa != null) {
+            visa.setDateDebut(Timestamp.valueOf(dateEntreeVisa.atStartOfDay()));
+        }
+        if (dateExpirationVisa != null) {
+            visa.setDateFin(Timestamp.valueOf(dateExpirationVisa));
+        }
+
+        demandeService.createTransfertSansAnterieur(demandeur, passeport, visa, idTypeDemande, idTypeVisa, idLieuVisa);
+
+        model.addAttribute("message", "Transfert créé avec succès!");
+        return "redirect:/demande/list";
+    }
+
+    @PostMapping("/duplicata")
+    public String submitDuplicata(
+            @RequestParam(required = true) String nom,
+            @RequestParam(required = false) String prenom,
+            @RequestParam(required = true) Date dateNaissance,
+            @RequestParam(required = false) String nomJeuneFille,
+            @RequestParam(required = false) String telephone,
+            @RequestParam(required = true) String adresse,
+            @RequestParam(required = true) Integer idNationalite,
+            @RequestParam(required = true) Integer idSituationFamiliale,
+            @RequestParam(required = true) Integer idTypeDemande,
+            @RequestParam(required = true) Integer idTypeVisa,
+            @RequestParam(required = true) String numeroPasseport,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime dateDelivrancePasseport,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime dateExpirationPasseport,
+            @RequestParam(required = false) String referenceVisa,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateEntreeVisa,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime dateExpirationVisa,
+            @RequestParam(required = false) Integer idLieuVisa,
+            Model model) {
+
+        Demandeur demandeur = new Demandeur();
+        demandeur.setNom(nom);
+        demandeur.setPrenom(prenom);
+        demandeur.setDateNaissance(dateNaissance);
+        demandeur.setAdresse(adresse);
+        demandeur.setNomJeuneFille(nomJeuneFille);
+        demandeur.setTelephone(telephone);
+
+        Nationalite nat = new Nationalite();
+        nat.setIdNationalite(idNationalite);
+        demandeur.setNationalite(nat);
+
+        SituationFamiliale sit = new SituationFamiliale();
+        sit.setIdSituationFamiliale(idSituationFamiliale);
+        demandeur.setSituationFamiliale(sit);
+
+        Passeport passeport = new Passeport();
+        passeport.setNumero(numeroPasseport);
+        passeport.setDateDelivrance(Timestamp.valueOf(dateDelivrancePasseport));
+        passeport.setDateExpiration(Timestamp.valueOf(dateExpirationPasseport));
+
+        Visa visa = new Visa();
+        visa.setReference(referenceVisa);
+        if (dateEntreeVisa != null) {
+            visa.setDateDebut(Timestamp.valueOf(dateEntreeVisa.atStartOfDay()));
+        }
+        if (dateExpirationVisa != null) {
+            visa.setDateFin(Timestamp.valueOf(dateExpirationVisa));
+        }
+
+        demandeService.createDuplicataSansAnterieur(demandeur, passeport, visa, idTypeDemande, idTypeVisa, idLieuVisa);
+
+        model.addAttribute("message", "Duplicata créé avec succès!");
+        return "redirect:/demande/list";
+    }
+
     @GetMapping("/list")
     public String listDemandes(Model model) {
         List<Demande> demandes = demandeService.findAll();
@@ -283,4 +397,5 @@ public class DemandeController {
         return "redirect:/demande/list";
     }
 
+    
 }
