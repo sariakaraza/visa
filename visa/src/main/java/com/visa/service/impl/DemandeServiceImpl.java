@@ -1,11 +1,27 @@
 package com.visa.service.impl;
 
+import com.visa.entity.CarteResident;
 import com.visa.entity.Demande;
 import com.visa.entity.DemandeStatut;
+import com.visa.entity.Demandeur;
+import com.visa.entity.Passeport;
 import com.visa.entity.StatutDemande;
+import com.visa.entity.Visa;
+import com.visa.entity.Lieu;
+import com.visa.entity.Nationalite;
+import com.visa.entity.SituationFamiliale;
+import com.visa.repository.CarteResidentRepository;
 import com.visa.repository.DemandeRepository;
 import com.visa.repository.DemandeStatutRepository;
+import com.visa.repository.DemandeurRepository;
+import com.visa.repository.PasseportRepository;
 import com.visa.repository.StatutDemandeRepository;
+import com.visa.repository.TypeDemandeRepository;
+import com.visa.repository.TypeVisaRepository;
+import com.visa.repository.VisaRepository;
+import com.visa.repository.LieuRepository;
+import com.visa.repository.NationaliteRepository;
+import com.visa.repository.SituationFamilialeRepository;
 import com.visa.service.DemandeService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,14 +38,44 @@ public class DemandeServiceImpl implements DemandeService {
     private final DemandeStatutRepository demandeStatutRepository;
     private final StatutDemandeRepository statutDemandeRepository;
 
+    private final DemandeurRepository demandeurRepository;
+    private final PasseportRepository passeportRepository;
+    private final VisaRepository visaRepository;
+    private final LieuRepository lieuRepository;
+    private final TypeDemandeRepository typeDemandeRepository;
+    private final TypeVisaRepository typeVisaRepository;
+    private final NationaliteRepository nationaliteRepository;
+    private final SituationFamilialeRepository situationFamilialeRepository;
+    private final CarteResidentRepository carteResidentRepository;
+
     public DemandeServiceImpl(
             DemandeRepository demandeRepository,
             DemandeStatutRepository demandeStatutRepository,
-            StatutDemandeRepository statutDemandeRepository
+            StatutDemandeRepository statutDemandeRepository,
+            DemandeurRepository demandeurRepository,
+            PasseportRepository passeportRepository,
+            VisaRepository visaRepository,
+            LieuRepository lieuRepository,
+            TypeDemandeRepository typeDemandeRepository,
+            TypeVisaRepository typeVisaRepository,
+            NationaliteRepository nationaliteRepository,
+            SituationFamilialeRepository situationFamilialeRepository,
+            CarteResidentRepository carteResidentRepository
+
     ) {
         this.demandeRepository = demandeRepository;
         this.demandeStatutRepository = demandeStatutRepository;
         this.statutDemandeRepository = statutDemandeRepository;
+        this.demandeurRepository = demandeurRepository;
+        this.passeportRepository = passeportRepository;
+        this.visaRepository = visaRepository;
+        this.lieuRepository = lieuRepository;
+        this.typeDemandeRepository = typeDemandeRepository;
+        this.typeVisaRepository = typeVisaRepository;
+        this.nationaliteRepository = nationaliteRepository;
+        this.situationFamilialeRepository = situationFamilialeRepository;
+        this.carteResidentRepository = carteResidentRepository;
+
     }
 
     @Override
@@ -66,5 +112,79 @@ public class DemandeServiceImpl implements DemandeService {
     @Override
     public void deleteById(Integer id) {
         demandeRepository.deleteById(id);
+    }
+    @Override
+    @Transactional
+    public Demande createTransfertSansAnterieur(Demandeur demandeur, Passeport passeport, Visa visa,
+                                               Integer idTypeDemande, Integer idTypeVisa, Integer idLieuVisa) {
+
+        if (demandeur.getNationalite() == null || demandeur.getNationalite().getIdNationalite() == null) {
+            throw new RuntimeException("Nationalité requise pour le demandeur");
+        }
+        Nationalite nat = nationaliteRepository.findById(demandeur.getNationalite().getIdNationalite())
+                .orElseThrow(() -> new RuntimeException("Nationalité introuvable"));
+        demandeur.setNationalite(nat);
+
+        if (demandeur.getSituationFamiliale() == null || demandeur.getSituationFamiliale().getIdSituationFamiliale() == null) {
+            throw new RuntimeException("Situation familiale requise pour le demandeur");
+        }
+        SituationFamiliale sit = situationFamilialeRepository.findById(demandeur.getSituationFamiliale().getIdSituationFamiliale())
+                .orElseThrow(() -> new RuntimeException("Situation familiale introuvable"));
+        demandeur.setSituationFamiliale(sit);
+
+        Demandeur savedDemandeur = demandeurRepository.save(demandeur);
+
+        // Sauvegarde Passeport
+        passeport.setDemandeur(savedDemandeur);
+        Passeport savedPasseport = passeportRepository.save(passeport);
+
+        // Sauvegarde Demande
+        Demande demande = new Demande();
+        demande.setDateDemande(new java.sql.Timestamp(System.currentTimeMillis()));
+        demande.setTypeDemande(typeDemandeRepository.findById(idTypeDemande)
+                .orElseThrow(() -> new RuntimeException("TypeDemande introuvable")));
+        demande.setTypeVisa(typeVisaRepository.findById(idTypeVisa)
+                .orElseThrow(() -> new RuntimeException("TypeVisa introuvable")));
+        demande.setDemandeur(savedDemandeur);
+
+        Demande savedDemande = demandeRepository.save(demande);
+
+        StatutDemande initialStatus = statutDemandeRepository.findByLibelle("Visa approuvé");
+
+        DemandeStatut demandeStatut = new DemandeStatut();
+        demandeStatut.setDemande(savedDemande);
+        demandeStatut.setStatutDemande(initialStatus);
+        demandeStatut.setDateStatut(Date.valueOf(LocalDate.now()));
+        demandeStatutRepository.save(demandeStatut);
+
+        // Sauvegarde Visa
+        visa.setPasseport(savedPasseport);
+        if (idLieuVisa != null) {
+            Lieu lieu = lieuRepository.findById(idLieuVisa)
+                    .orElseThrow(() -> new RuntimeException("Lieu introuvable"));
+            visa.setLieu(lieu);
+        } else if (visa.getLieu() == null) {
+            throw new RuntimeException("Le lieu du visa est requis");
+        }
+        visaRepository.save(visa);
+
+        CarteResident carteResident = new CarteResident();
+        carteResident.setDemande(savedDemande);
+        carteResident.setPasseport(savedPasseport);
+        carteResident.setDateDebut(visa.getDateDebut());
+        carteResident.setDateFin(visa.getDateFin());
+        carteResident.setReference(visa.getReference());
+
+        carteResidentRepository.save(carteResident);
+
+        return savedDemande;
+    }
+
+    @Override
+    @Transactional
+    public Demande createDuplicataSansAnterieur(Demandeur demandeur, Passeport passeport, Visa visa,
+                                                Integer idTypeDemande, Integer idTypeVisa, Integer idLieuVisa) {
+        // The duplicata flow is similar to transfert: create demandeur, passeport, demande, visa, statut
+        return createTransfertSansAnterieur(demandeur, passeport, visa, idTypeDemande, idTypeVisa, idLieuVisa);
     }
 }
