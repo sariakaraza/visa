@@ -455,19 +455,8 @@ public class DemandeController {
             .findFirst()
             .orElseThrow();
 
-        // Get existing demandes for this demandeur to find a recent one
-        List<Demande> demandesExistantes = demandeService.findAll().stream()
-            .filter(d -> d.getDemandeur().getIdDemandeur().equals(idDemandeur))
-            .toList();
-
-        if (demandesExistantes.isEmpty()) {
-            throw new IllegalStateException("Aucune demande antérieure trouvée pour ce demandeur.");
-        }
-
-        Demande demandeRecente = demandesExistantes.get(demandesExistantes.size() - 1);
-
-        Demande created = demandeService.createDuplicataSansAnterieur(demandeur, new Passeport(), new Visa(),
-            duplicata.getIdTypeDemande(), demandeRecente.getTypeVisa().getIdTypeVisa(), null);
+        // Utilise la nouvelle méthode qui récupère les données antérieures automatiquement
+        Demande created = demandeService.createDuplicataAvecDonneesAnterieur(demandeur, duplicata.getIdTypeDemande());
 
         return "redirect:/demande/recap/" + created.getIdDemande();
     }
