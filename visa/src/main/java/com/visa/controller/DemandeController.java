@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.sql.Date;
 import java.sql.Timestamp;
@@ -106,6 +107,7 @@ public class DemandeController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime dateExpirationVisa,
             @RequestParam(required = false) Integer idLieuVisa,
             @RequestParam(required = false) List<Integer> dossiers,
+            @RequestParam(required = false) List<MultipartFile> files,
             Model model) {
 
         // Create Demandeur
@@ -136,7 +138,7 @@ public class DemandeController {
         demande.setTypeVisa(typeVisaService.findById(idTypeVisa).orElseThrow());
         demande.setDemandeur(savedDemandeur);
 
-        demandeService.save(demande);
+        Demande savedDemande = demandeService.save(demande);
 
         // Create VisaTransformable
         VisaTransformable visa = new VisaTransformable();
@@ -147,15 +149,9 @@ public class DemandeController {
         visa.setPasseport(savedPasseport);
         visaTransformableService.save(visa);
 
-        // Create PieceJustificative for selected dossiers
-        if (dossiers != null) {
-            for (Integer idDossier : dossiers) {
-                PieceJustificative pj = new PieceJustificative();
-                pj.setDossier(dossierService.findById(idDossier).orElseThrow());
-                pj.setDemandeur(savedDemandeur);
-                pj.setDateAjout(new Timestamp(System.currentTimeMillis()));
-                pieceJustificativeService.save(pj);
-            }
+        // Process uploads (one file per selected dossier). This will also set statut 'Scan terminé' when complete.
+        if (dossiers != null && !dossiers.isEmpty()) {
+            demandeService.processUploadsForDemande(savedDemande.getIdDemande(), files, dossiers);
         }
 
         model.addAttribute("message", "Demande créée avec succès!");
@@ -320,6 +316,8 @@ public class DemandeController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateEntreeVisa,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime dateExpirationVisa,
             @RequestParam(required = false) Integer idLieuVisa,
+            @RequestParam(required = false) List<Integer> dossiers,
+            @RequestParam(required = false) List<MultipartFile> files,
             Model model) {
 
         Demandeur demandeur = new Demandeur();
@@ -353,7 +351,9 @@ public class DemandeController {
         }
 
         Demande created = demandeService.createTransfertSansAnterieur(demandeur, passeport, visa, idTypeDemande, idTypeVisa, idLieuVisa);
-
+        if (dossiers != null && !dossiers.isEmpty()) {
+            demandeService.processUploadsForDemande(created.getIdDemande(), files, dossiers);
+        }
         return "redirect:/demande/recap/" + created.getIdDemande();
     }
 
@@ -376,6 +376,8 @@ public class DemandeController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateEntreeVisa,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime dateExpirationVisa,
             @RequestParam(required = false) Integer idLieuVisa,
+            @RequestParam(required = false) List<Integer> dossiers,
+            @RequestParam(required = false) List<MultipartFile> files,
             Model model) {
 
         Demandeur demandeur = new Demandeur();
@@ -410,7 +412,9 @@ public class DemandeController {
         
 
         Demande created = demandeService.createDuplicataSansAnterieur(demandeur, passeport, visa, idTypeDemande, idTypeVisa, idLieuVisa);
-
+        if (dossiers != null && !dossiers.isEmpty()) {
+            demandeService.processUploadsForDemande(created.getIdDemande(), files, dossiers);
+        }
         return "redirect:/demande/recap/" + created.getIdDemande();
     }
 
@@ -578,25 +582,20 @@ public class DemandeController {
     }
 
     @PostMapping("/edit")
-    public String updateForm(@RequestParam Integer id, @RequestParam(required = false) List<Integer> dossiers, Model model) {
+    public String updateForm(@RequestParam Integer id, @RequestParam(required = false) List<Integer> dossiers, @RequestParam(required = false) List<MultipartFile> files, Model model) {
         Demande demande = demandeService.findById(id).orElseThrow();
-        Demandeur demandeur = demande.getDemandeur();
-
-        List<Integer> existing = pieceJustificativeService.findAll().stream()
-            .filter(p -> p.getDemandeur().getIdDemandeur().equals(demandeur.getIdDemandeur()))
-            .map(p -> p.getDossier().getIdDossier())
-            .toList();
-
-        if (dossiers != null) {
-            for (Integer dossierId : dossiers) {
-                if (!existing.contains(dossierId)) {
-                    PieceJustificative pj = new PieceJustificative();
-                    pj.setDateAjout(new Timestamp(System.currentTimeMillis()));
-                    pj.setDossier(dossierService.findById(dossierId).orElseThrow());
-                    pj.setDemandeur(demandeur);
-                    pieceJustificativeService.save(pj);
-                }
+        // Prevent modifications if current statut == 'Visa approuvé'
+        List<DemandeStatut> statuts = demandeStatutService.findByDemande(demande);
+        if (!statuts.isEmpty()) {
+            DemandeStatut latest = statuts.stream().max((s1, s2) -> s1.getIdDemandeStatut().compareTo(s2.getIdDemandeStatut())).orElse(null);
+            if (latest != null && latest.getStatutDemande() != null && "Visa approuvé".equalsIgnoreCase(latest.getStatutDemande().getLibelle())) {
+                model.addAttribute("message", "La demande est approuvée et ne peut plus être modifiée.");
+                return "redirect:/demande/list";
             }
+        }
+
+        if (dossiers != null && !dossiers.isEmpty()) {
+            demandeService.processUploadsForDemande(id, files, dossiers);
         }
 
         return "redirect:/demande/list";

@@ -21,7 +21,7 @@
             <div class="container">
                 <h1>Formulaire de Transfert de Visa (Sans données antérieures)</h1>
 
-                <form th:action="@{/demande/transfert-visa}" method="post">
+                <form th:action="@{/demande/transfert-visa}" method="post" enctype="multipart/form-data">
                     <div class="form-group">
                         <label for="nom">Nom *</label>
                         <input type="text" id="nom" name="nom" required>
@@ -202,8 +202,26 @@
                 const span = document.createElement('span');
                 span.textContent = ` ${dossier.libelle}`;
 
+                const fileInput = document.createElement('input');
+                fileInput.type = 'file';
+                fileInput.name = 'files';
+                fileInput.accept = 'image/*';
+                fileInput.style.display = 'none';
+
+                checkbox.addEventListener('change', function() {
+                    if (this.checked) {
+                        fileInput.style.display = 'block';
+                        fileInput.required = true;
+                    } else {
+                        fileInput.style.display = 'none';
+                        fileInput.required = false;
+                        fileInput.value = null;
+                    }
+                });
+
                 label.appendChild(checkbox);
                 label.appendChild(span);
+                label.appendChild(fileInput);
                 dossiersContainer.appendChild(label);
             });
         }
