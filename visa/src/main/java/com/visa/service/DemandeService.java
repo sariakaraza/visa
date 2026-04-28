@@ -1,6 +1,6 @@
 package com.visa.service;
 
-import com.visa.entity.Demande;
+import com.visa.entity.*;
 import java.util.List;
 import java.util.Optional;
 
@@ -9,4 +9,11 @@ public interface DemandeService {
     Optional<Demande> findById(Integer id);
     Demande save(Demande demande);
     void deleteById(Integer id);
+    Demande createTransfertSansAnterieur(Demandeur demandeur, Passeport passeport, Visa visa,
+                                       Integer idTypeDemande, Integer idTypeVisa, Integer idLieuVisa);
+
+    Demande createDuplicataSansAnterieur(Demandeur demandeur, Passeport passeport, Visa visa,
+                                        Integer idTypeDemande, Integer idTypeVisa, Integer idLieuVisa);
+
+    Demande createDuplicataAvecDonneesAnterieur(Demandeur demandeur, Integer idTypeDemande);
 }

@@ -153,6 +153,305 @@ public class DemandeController {
         return "redirect:/demande/list";
     }
 
+    @GetMapping("/transfert-visa")
+    public String showTransfertChoice(Model model) {
+        return "demande/transfert-choice";
+    }
+
+    @GetMapping("/transfert-visa/form")
+    public String showTransfertForm(Model model) {
+        List<TypeDemande> typeDemandes = typeDemandeService.findAll();
+        List<TypeVisa> typeVisas = typeVisaService.findAll();
+        List<Nationalite> nationalites = nationaliteService.findAll();
+        List<SituationFamiliale> situations = situationFamilialeService.findAll();
+        List<Dossier> dossiers = dossierService.findAll();
+        List<Lieu> lieux = lieuService.findAll();
+
+        TypeDemande transfert = typeDemandes.stream()
+            .filter(td -> td.getLibelle() != null && td.getLibelle().equalsIgnoreCase("Transfert de Visa"))
+            .findFirst()
+            .orElseThrow(() -> new IllegalStateException("Le type de demande 'Transfert de Visa' est introuvable."));
+
+        Map<Integer, List<Dossier>> dossiersByVisa = new HashMap<>();
+        for (TypeVisa typeVisa : typeVisas) {
+            List<Dossier> dossiersForVisa = dossiers.stream()
+                    .filter(d -> d.getTypeVisa() != null
+                            && d.getTypeVisa().getIdTypeVisa().equals(typeVisa.getIdTypeVisa())
+                            && (d.getTypeDemande() == null || d.getTypeDemande().getIdTypeDemande().equals(transfert.getIdTypeDemande())))
+                    .toList();
+            dossiersByVisa.put(typeVisa.getIdTypeVisa(), dossiersForVisa);
+        }
+
+        model.addAttribute("idTypeDemandeFixed", transfert.getIdTypeDemande());
+        model.addAttribute("typeVisas", typeVisas);
+        model.addAttribute("nationalites", nationalites);
+        model.addAttribute("situations", situations);
+        model.addAttribute("lieux", lieux);
+        model.addAttribute("dossiersByVisa", dossiersByVisa);
+
+        return "demande/transfert-form";
+    }
+
+    @GetMapping("/transfert-visa/form-anterieur")
+    public String showTransfertFormAnterieur(Model model) {
+        List<Demandeur> demandeurs = demandeurService.findAll();
+        List<TypeDemande> typeDemandes = typeDemandeService.findAll();
+        List<TypeVisa> typeVisas = typeVisaService.findAll();
+        List<Lieu> lieux = lieuService.findAll();
+
+        TypeDemande transfert = typeDemandes.stream()
+            .filter(td -> td.getLibelle() != null && td.getLibelle().equalsIgnoreCase("Transfert de Visa"))
+            .findFirst()
+            .orElseThrow(() -> new IllegalStateException("Le type de demande 'Transfert de Visa' est introuvable."));
+
+        model.addAttribute("idTypeDemandeFixed", transfert.getIdTypeDemande());
+        model.addAttribute("demandeurs", demandeurs);
+        model.addAttribute("typeVisas", typeVisas);
+        model.addAttribute("lieux", lieux);
+
+        return "demande/transfert-form-anterieur";
+    }
+
+    @GetMapping("/duplicata/form-anterieur")
+    public String showDuplicataFormAnterieur(Model model) {
+        List<Demandeur> demandeurs = demandeurService.findAll();
+        List<TypeDemande> typeDemandes = typeDemandeService.findAll();
+        List<TypeVisa> typeVisas = typeVisaService.findAll();
+
+        TypeDemande duplicata = typeDemandes.stream()
+            .filter(td -> td.getLibelle() != null && td.getLibelle().equalsIgnoreCase("Duplicata"))
+            .findFirst()
+            .orElseThrow(() -> new IllegalStateException("Le type de demande 'Duplicata' est introuvable."));
+
+        model.addAttribute("idTypeDemandeFixed", duplicata.getIdTypeDemande());
+        model.addAttribute("demandeurs", demandeurs);
+        model.addAttribute("typeVisas", typeVisas);
+
+        return "demande/duplicata-form-anterieur";
+    }
+
+    @GetMapping("/duplicata")
+    public String showDuplicataChoice(Model model) {
+        return "demande/duplicata-choice";
+    }
+
+    @GetMapping("/duplicata/form")
+    public String showDuplicataForm(Model model) {
+        List<TypeDemande> typeDemandes = typeDemandeService.findAll();
+        List<TypeVisa> typeVisas = typeVisaService.findAll();
+        List<Nationalite> nationalites = nationaliteService.findAll();
+        List<SituationFamiliale> situations = situationFamilialeService.findAll();
+        List<Dossier> dossiers = dossierService.findAll();
+        List<Lieu> lieux = lieuService.findAll();
+
+        TypeDemande duplicata = typeDemandes.stream()
+            .filter(td -> td.getLibelle() != null && td.getLibelle().equalsIgnoreCase("Duplicata"))
+            .findFirst()
+            .orElseThrow(() -> new IllegalStateException("Le type de demande 'Duplicata' est introuvable."));
+
+        Map<Integer, List<Dossier>> dossiersByVisa = new HashMap<>();
+        for (TypeVisa typeVisa : typeVisas) {
+            List<Dossier> dossiersForVisa = dossiers.stream()
+                    .filter(d -> d.getTypeVisa() != null
+                            && d.getTypeVisa().getIdTypeVisa().equals(typeVisa.getIdTypeVisa())
+                            && (d.getTypeDemande() == null || d.getTypeDemande().getIdTypeDemande().equals(duplicata.getIdTypeDemande())))
+                    .toList();
+            dossiersByVisa.put(typeVisa.getIdTypeVisa(), dossiersForVisa);
+        }
+
+        model.addAttribute("idTypeDemandeFixed", duplicata.getIdTypeDemande());
+        model.addAttribute("typeVisas", typeVisas);
+        model.addAttribute("nationalites", nationalites);
+        model.addAttribute("situations", situations);
+        model.addAttribute("lieux", lieux);
+        model.addAttribute("dossiersByVisa", dossiersByVisa);
+
+        return "demande/duplicata-form";
+    }
+
+    @GetMapping("/recap/{id}")
+    public String showRecap(@PathVariable Integer id, Model model) {
+        Demande demande = demandeService.findById(id).orElseThrow();
+
+        List<PieceJustificative> pieces = pieceJustificativeService.findAll().stream()
+                .filter(p -> p.getDemandeur().getIdDemandeur().equals(demande.getDemandeur().getIdDemandeur()))
+                .toList();
+
+        Passeport passeport = passeportService.findAll().stream()
+                .filter(p -> p.getDemandeur().getIdDemandeur().equals(demande.getDemandeur().getIdDemandeur()))
+                .findFirst()
+                .orElse(null);
+
+        List<DemandeStatut> statuts = demandeStatutService.findByDemande(demande);
+
+        model.addAttribute("demande", demande);
+        model.addAttribute("pieces", pieces);
+        model.addAttribute("passeport", passeport);
+        model.addAttribute("statuts", statuts);
+
+        return "demande/recap";
+    }
+
+    @PostMapping("/transfert-visa")
+    public String submitTransfertVisa(
+            @RequestParam(required = true) String nom,
+            @RequestParam(required = false) String prenom,
+            @RequestParam(required = true) Date dateNaissance,
+            @RequestParam(required = false) String nomJeuneFille,
+            @RequestParam(required = false) String telephone,
+            @RequestParam(required = true) String adresse,
+            @RequestParam(required = true) Integer idNationalite,
+            @RequestParam(required = true) Integer idSituationFamiliale,
+            @RequestParam(required = true) Integer idTypeDemande,
+            @RequestParam(required = true) Integer idTypeVisa,
+            @RequestParam(required = true) String numeroPasseport,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime dateDelivrancePasseport,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime dateExpirationPasseport,
+            @RequestParam(required = false) String referenceVisa,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateEntreeVisa,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime dateExpirationVisa,
+            @RequestParam(required = false) Integer idLieuVisa,
+            Model model) {
+
+        Demandeur demandeur = new Demandeur();
+        demandeur.setNom(nom);
+        demandeur.setPrenom(prenom);
+        demandeur.setDateNaissance(dateNaissance);
+        demandeur.setAdresse(adresse);
+        demandeur.setNomJeuneFille(nomJeuneFille);
+        demandeur.setTelephone(telephone);
+
+        Nationalite nat = new Nationalite();
+        nat.setIdNationalite(idNationalite);
+        demandeur.setNationalite(nat);
+
+        SituationFamiliale sit = new SituationFamiliale();
+        sit.setIdSituationFamiliale(idSituationFamiliale);
+        demandeur.setSituationFamiliale(sit);
+
+        Passeport passeport = new Passeport();
+        passeport.setNumero(numeroPasseport);
+        passeport.setDateDelivrance(Timestamp.valueOf(dateDelivrancePasseport));
+        passeport.setDateExpiration(Timestamp.valueOf(dateExpirationPasseport));
+
+        Visa visa = new Visa();
+        visa.setReference(referenceVisa);
+        if (dateEntreeVisa != null) {
+            visa.setDateDebut(Timestamp.valueOf(dateEntreeVisa.atStartOfDay()));
+        }
+        if (dateExpirationVisa != null) {
+            visa.setDateFin(Timestamp.valueOf(dateExpirationVisa));
+        }
+
+        Demande created = demandeService.createTransfertSansAnterieur(demandeur, passeport, visa, idTypeDemande, idTypeVisa, idLieuVisa);
+
+        return "redirect:/demande/recap/" + created.getIdDemande();
+    }
+
+    @PostMapping("/duplicata/form")
+    public String submitDuplicata(
+            @RequestParam(required = true) String nom,
+            @RequestParam(required = false) String prenom,
+            @RequestParam(required = true) Date dateNaissance,
+            @RequestParam(required = false) String nomJeuneFille,
+            @RequestParam(required = false) String telephone,
+            @RequestParam(required = true) String adresse,
+            @RequestParam(required = true) Integer idNationalite,
+            @RequestParam(required = true) Integer idSituationFamiliale,
+            @RequestParam(required = true) Integer idTypeDemande,
+            @RequestParam(required = true) Integer idTypeVisa,
+            @RequestParam(required = true) String numeroPasseport,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime dateDelivrancePasseport,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime dateExpirationPasseport,
+            @RequestParam(required = false) String referenceVisa,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateEntreeVisa,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime dateExpirationVisa,
+            @RequestParam(required = false) Integer idLieuVisa,
+            Model model) {
+
+        Demandeur demandeur = new Demandeur();
+        demandeur.setNom(nom);
+        demandeur.setPrenom(prenom);
+        demandeur.setDateNaissance(dateNaissance);
+        demandeur.setAdresse(adresse);
+        demandeur.setNomJeuneFille(nomJeuneFille);
+        demandeur.setTelephone(telephone);
+
+        Nationalite nat = new Nationalite();
+        nat.setIdNationalite(idNationalite);
+        demandeur.setNationalite(nat);
+
+        SituationFamiliale sit = new SituationFamiliale();
+        sit.setIdSituationFamiliale(idSituationFamiliale);
+        demandeur.setSituationFamiliale(sit);
+
+        Passeport passeport = new Passeport();
+        passeport.setNumero(numeroPasseport);
+        passeport.setDateDelivrance(Timestamp.valueOf(dateDelivrancePasseport));
+        passeport.setDateExpiration(Timestamp.valueOf(dateExpirationPasseport));
+
+        Visa visa = new Visa();
+        visa.setReference(referenceVisa);
+        if (dateEntreeVisa != null) {
+            visa.setDateDebut(Timestamp.valueOf(dateEntreeVisa.atStartOfDay()));
+        }
+        if (dateExpirationVisa != null) {
+            visa.setDateFin(Timestamp.valueOf(dateExpirationVisa));
+        }
+        
+
+        Demande created = demandeService.createDuplicataSansAnterieur(demandeur, passeport, visa, idTypeDemande, idTypeVisa, idLieuVisa);
+
+        return "redirect:/demande/recap/" + created.getIdDemande();
+    }
+
+    @PostMapping("/transfert-visa/anterieur")
+    public String submitTransfertVisaAnterieur(
+            @RequestParam(required = true) Integer idDemandeur,
+            @RequestParam(required = true) Integer idTypeVisa,
+            @RequestParam(required = true) String numeroPasseport,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime dateDelivrancePasseport,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime dateExpirationPasseport,
+            @RequestParam(required = false) Integer idLieuVisa,
+            Model model) {
+
+        Demandeur demandeur = demandeurService.findById(idDemandeur).orElseThrow();
+
+        Passeport passeport = new Passeport();
+        passeport.setNumero(numeroPasseport);
+        passeport.setDateDelivrance(Timestamp.valueOf(dateDelivrancePasseport));
+        passeport.setDateExpiration(Timestamp.valueOf(dateExpirationPasseport));
+        passeport.setDemandeur(demandeur);
+
+        TypeDemande transfert = typeDemandeService.findAll().stream()
+            .filter(td -> td.getLibelle() != null && td.getLibelle().equalsIgnoreCase("Transfert de Visa"))
+            .findFirst()
+            .orElseThrow();
+
+        Demande created = demandeService.createTransfertSansAnterieur(demandeur, passeport, new Visa(), 
+            transfert.getIdTypeDemande(), idTypeVisa, idLieuVisa);
+
+        return "redirect:/demande/recap/" + created.getIdDemande();
+    }
+
+    @PostMapping("/duplicata/anterieur")
+    public String submitDuplicataAnterieure(
+            @RequestParam(required = true) Integer idDemandeur,
+            Model model) {
+
+        Demandeur demandeur = demandeurService.findById(idDemandeur).orElseThrow();
+
+        TypeDemande duplicata = typeDemandeService.findAll().stream()
+            .filter(td -> td.getLibelle() != null && td.getLibelle().equalsIgnoreCase("Duplicata"))
+            .findFirst()
+            .orElseThrow();
+
+        // Utilise la nouvelle méthode qui récupère les données antérieures automatiquement
+        Demande created = demandeService.createDuplicataAvecDonneesAnterieur(demandeur, duplicata.getIdTypeDemande());
+
+        return "redirect:/demande/recap/" + created.getIdDemande();
+    }
+
     @GetMapping("/list")
     public String listDemandes(Model model) {
         List<Demande> demandes = demandeService.findAll();
