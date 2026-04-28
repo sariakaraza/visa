@@ -40,6 +40,7 @@ INSERT INTO statut_demande (libelle) VALUES
 ('Demande créée'),
 ('Dossier en cours de traitement'),
 ('Pièces complémentaires demandées'),
+('Scan terminé'),
 ('Visa approuvé'),
 ('Visa refusé'),
 ('Demande annulée');
