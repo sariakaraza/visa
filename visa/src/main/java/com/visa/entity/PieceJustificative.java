@@ -18,6 +18,9 @@ public class PieceJustificative {
 
     private Timestamp dateAjout;
 
+    @Column(name = "chemin_fichier")
+    private String cheminFichier;
+
     @ManyToOne
     @JoinColumn(name = "id_dossier", nullable = false)
     private Dossier dossier;
