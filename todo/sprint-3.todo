@@ -1,0 +1,73 @@
+TL : ETUO03378 Sariaka
+Dev Backoffice : ETU003126 Sandratra et ETU003203 Finoana
+
+-- Finoana :
+
+* SQL :
+
+  * Ajouter une colonne `chemin_fichier` dans la table `piece_justificative` pour stocker le chemin relatif de l’image uploadée
+  * Ajouter le nouveau statut **"Scan terminé"** dans la table statut_demande
+
+* Entités :
+
+  * Modifier l’entité `PieceJustificative` pour ajouter le champ `cheminFichier`
+
+* Services :
+
+  * Dans `PieceJustificativeService` (interface + implémentation)
+
+    * Créer la fonction `uploadAndSavePieceJustificative(MultipartFile file, Integer idDossier, Integer idDemandeur)`
+      → upload du fichier image, sauvegarde dans un dossier local, génération d’un nom unique et insertion dans `piece_justificative`
+
+    * Créer la fonction `findByDemandeurAndDossier(Integer idDemandeur, Integer idDossier)`
+      → récupérer les pièces justificatives d’un demandeur pour un dossier spécifique
+
+  * Dans `DemandeService` (interface + implémentation)
+
+    * Créer la fonction `processUploadsForDemande(Integer idDemande, List<MultipartFile> files, List<Integer> idDossiers)`
+      → gérer les uploads multiples, appeler `uploadAndSavePieceJustificative()` pour chaque dossier coché et vérifier si tous les fichiers sont présents
+
+    * Lorsque toutes les pièces justificatives sont uploadées
+      → mettre automatiquement le statut à **"Scan terminé"**
+
+
+
+-- Sandratra :
+
+* HTML + Contrôleur :
+
+  * Modifier `form.html` (nouvelle demande)
+
+    * Ajouter un script JavaScript pour afficher dynamiquement un champ upload image sous chaque checkbox de dossier coché
+    * Modifier le formulaire en `multipart/form-data`
+
+  * Modifier `edit.html`
+
+    * Même logique que `form.html`
+    * Pré-remplir les pièces justificatives déjà existantes
+
+  * Modifier `duplicata-form.html`
+
+    * Ajouter les uploads dynamiques pour les dossiers cochés
+
+  * Modifier `transfert-form.html`
+
+    * Ajouter les uploads dynamiques pour les dossiers cochés
+
+  * Modifier ou créer le formulaire `nouveau titre`
+
+    * Ajouter les checkboxes de dossiers + uploads dynamiques
+
+  * Dans `DemandeController`
+
+    * Modifier les méthodes de soumission (`createDemande`, `updateDemande`, etc.)
+    * Ajouter `List<MultipartFile> files` et `List<Integer> idDossiers`
+    * Appeler `demandeService.processUploadsForDemande(...)`
+
+  * Ajouter les vérifications :
+
+    * chaque dossier coché doit avoir un fichier uploadé
+    * vérifier l’insertion en base après validation
+
+  * Lorsque le statut = **Visa approuvé**
+    → empêcher toute modification de la demande
