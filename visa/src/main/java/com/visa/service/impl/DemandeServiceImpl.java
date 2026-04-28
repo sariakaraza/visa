@@ -166,6 +166,7 @@ public class DemandeServiceImpl implements DemandeService {
         } else if (visa.getLieu() == null) {
             throw new RuntimeException("Le lieu du visa est requis");
         }
+        visa.setDemande(savedDemande);
         visaRepository.save(visa);
 
         CarteResident carteResident = new CarteResident();
@@ -186,5 +187,57 @@ public class DemandeServiceImpl implements DemandeService {
                                                 Integer idTypeDemande, Integer idTypeVisa, Integer idLieuVisa) {
         // The duplicata flow is similar to transfert: create demandeur, passeport, demande, visa, statut
         return createTransfertSansAnterieur(demandeur, passeport, visa, idTypeDemande, idTypeVisa, idLieuVisa);
+    }
+
+    @Override
+    @Transactional
+    public Demande createDuplicataAvecDonneesAnterieur(Demandeur demandeur, Integer idTypeDemande) {
+        // Récupère le dernier passeport du demandeur
+        Passeport dernierePasseport = passeportRepository.findAll().stream()
+                .filter(p -> p.getDemandeur().getIdDemandeur().equals(demandeur.getIdDemandeur()))
+                .max((p1, p2) -> p1.getIdPasseport().compareTo(p2.getIdPasseport()))
+                .orElseThrow(() -> new RuntimeException("Aucun passeport trouvé pour ce demandeur"));
+
+        // Récupère la dernière demande du demandeur pour récupérer le type de visa
+        Demande derniereDemande = demandeRepository.findAll().stream()
+                .filter(d -> d.getDemandeur().getIdDemandeur().equals(demandeur.getIdDemandeur()))
+                .max((d1, d2) -> d1.getIdDemande().compareTo(d2.getIdDemande()))
+                .orElseThrow(() -> new RuntimeException("Aucune demande antérieure trouvée pour ce demandeur"));
+
+        // Récupère le dernier visa
+        Visa dernierVisa = visaRepository.findAll().stream()
+                .filter(v -> v.getPasseport().getIdPasseport().equals(dernierePasseport.getIdPasseport()))
+                .max((v1, v2) -> v1.getIdVisa().compareTo(v2.getIdVisa()))
+                .orElse(new Visa());
+
+        // Crée la nouvelle demande Duplicata
+        Demande demande = new Demande();
+        demande.setDateDemande(new java.sql.Timestamp(System.currentTimeMillis()));
+        demande.setTypeDemande(typeDemandeRepository.findById(idTypeDemande)
+                .orElseThrow(() -> new RuntimeException("TypeDemande introuvable")));
+        demande.setTypeVisa(derniereDemande.getTypeVisa());
+        demande.setDemandeur(demandeur);
+        demande.setDemandeParent(derniereDemande); // Lien vers la demande parent
+
+        Demande savedDemande = demandeRepository.save(demande);
+
+        // Crée le statut initial
+        StatutDemande initialStatus = statutDemandeRepository.findByLibelle("Visa approuvé");
+        DemandeStatut demandeStatut = new DemandeStatut();
+        demandeStatut.setDemande(savedDemande);
+        demandeStatut.setStatutDemande(initialStatus);
+        demandeStatut.setDateStatut(Date.valueOf(LocalDate.now()));
+        demandeStatutRepository.save(demandeStatut);
+
+        // Crée la carte résident
+        CarteResident carteResident = new CarteResident();
+        carteResident.setDemande(savedDemande);
+        carteResident.setPasseport(dernierePasseport);
+        carteResident.setDateDebut(dernierVisa.getDateDebut());
+        carteResident.setDateFin(dernierVisa.getDateFin());
+        carteResident.setReference(dernierVisa.getReference());
+        carteResidentRepository.save(carteResident);
+
+        return savedDemande;
     }
 }

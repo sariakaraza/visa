@@ -17,4 +17,6 @@ public interface DemandeService {
 
     Demande createDuplicataSansAnterieur(Demandeur demandeur, Passeport passeport, Visa visa,
                                         Integer idTypeDemande, Integer idTypeVisa, Integer idLieuVisa);
+
+    Demande createDuplicataAvecDonneesAnterieur(Demandeur demandeur, Integer idTypeDemande);
 }

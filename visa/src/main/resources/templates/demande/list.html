@@ -11,6 +11,8 @@
             <div class="sidebar-title">Demande</div>
             <nav class="sidebar-nav">
                 <a th:href="@{/demande/new}">Ajout</a>
+                <a th:href="@{/demande/transfert-visa}">Transfert Visa</a>
+                <a th:href="@{/demande/duplicata}">Duplicata</a>
                 <a th:href="@{/demande/list}">Liste</a>
             </nav>
         </aside>
@@ -40,7 +42,7 @@
                             <td th:text="${demande.typeVisa.libelle}"></td>
                             <td th:text="${demande.demandeur.nom + ' ' + demande.demandeur.prenom}"></td>
                             <td th:text="${demande.demandeur.nationalite.libelle}"></td>
-                            <td>Demande créée</td>
+                            <td th:text="${statutMap[demande.idDemande] != null ? statutMap[demande.idDemande].statutDemande.libelle : 'N/A'}"></td>
                             <td>
                                 <div class="actions">
                                     <a class="btn btn-secondary" th:href="@{/demande/{id}(id=${demande.idDemande})}">Voir</a>
