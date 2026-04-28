@@ -49,8 +49,8 @@ INSERT INTO statut_demande (libelle) VALUES
 -- =========================
 INSERT INTO type_demande (libelle) VALUES
 ('Nouveau Titre'),
-('Duplicata(transfert de visa)'),
-('Duplicata(carte de resident)');
+('Duplicata'),
+('Transfert de Visa');
 
 -- =========================
 -- Dossiers Investisseur

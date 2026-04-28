@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Duplicata - Avec données antérieures</title>
+    <link rel="stylesheet" th:href="@{/css/demande.css}">
+</head>
+<body>
+    <div class="app">
+        <aside class="sidebar">
+            <div class="sidebar-title">Demande</div>
+            <nav class="sidebar-nav">
+                <a th:href="@{/demande/new}">Ajout</a>
+                <a th:href="@{/demande/transfert-visa}">Transfert Visa</a>
+                <a th:href="@{/demande/duplicata}">Duplicata</a>
+                <a th:href="@{/demande/list}">Liste</a>
+            </nav>
+        </aside>
+
+        <main class="content">
+            <div class="container">
+                <h1>Duplicata (Avec données antérieures)</h1>
+
+                <form th:action="@{/demande/duplicata/anterieur}" method="post">
+                    <div class="form-group">
+                        <label for="idDemandeur">Sélectionner Demandeur *</label>
+                        <select id="idDemandeur" name="idDemandeur" required onchange="loadDemandeurInfo();">
+                            <option value="">-- Choisir un demandeur --</option>
+                            <option th:each="demandeur : ${demandeurs}" 
+                                    th:value="${demandeur.idDemandeur}"
+                                    th:text="${demandeur.nom} + ' ' + ${demandeur.prenom} + ' (' + ${demandeur.dateNaissance} + ')'">
+                            </option>
+                        </select>
+                    </div>
+
+                    <div id="demandeurInfoSection" class="form-group hidden">
+                        <h2>Informations du Demandeur</h2>
+                        <div class="kv">
+                            <dt>Nom</dt>
+                            <dd id="infoDemandeurNom"></dd>
+                            <dt>Prénom</dt>
+                            <dd id="infoDemandeurPrenom"></dd>
+                            <dt>Date de Naissance</dt>
+                            <dd id="infoDemandeurDateNaissance"></dd>
+                            <dt>Adresse</dt>
+                            <dd id="infoDemandeurAdresse"></dd>
+                            <dt>Nationalité</dt>
+                            <dd id="infoDemandeurNationalite"></dd>
+                            <dt>Situation Familiale</dt>
+                            <dd id="infoDemandeurSituation"></dd>
+                        </div>
+                    </div>
+
+                    <input type="hidden" name="idTypeDemande" th:value="${idTypeDemandeFixed}">
+
+                    <button type="submit">Créer Duplicata</button>
+                </form>
+            </div>
+        </main>
+    </div>
+
+    <script th:inline="javascript">
+        /*<![CDATA[*/
+
+        const demandeursData = /*[[${demandeurs}]]*/ [];
+
+        function loadDemandeurInfo() {
+            const idDemandeur = document.getElementById('idDemandeur').value;
+            const demandeurInfoSection = document.getElementById('demandeurInfoSection');
+
+            if (!idDemandeur) {
+                demandeurInfoSection.classList.add('hidden');
+                return;
+            }
+
+            const demandeur = demandeursData.find(d => d.idDemandeur == idDemandeur);
+            if (!demandeur) return;
+
+            document.getElementById('infoDemandeurNom').textContent = demandeur.nom;
+            document.getElementById('infoDemandeurPrenom').textContent = demandeur.prenom || '-';
+            document.getElementById('infoDemandeurDateNaissance').textContent = demandeur.dateNaissance || '-';
+            document.getElementById('infoDemandeurAdresse').textContent = demandeur.adresse || '-';
+            document.getElementById('infoDemandeurNationalite').textContent = (demandeur.nationalite ? demandeur.nationalite.libelle : '-');
+            document.getElementById('infoDemandeurSituation').textContent = (demandeur.situationFamiliale ? demandeur.situationFamiliale.libelle : '-');
+
+            demandeurInfoSection.classList.remove('hidden');
+        }
+
+        /*]]>*/
+    </script>
+</body>
+</html>

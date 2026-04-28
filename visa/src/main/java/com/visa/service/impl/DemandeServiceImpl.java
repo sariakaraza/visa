@@ -166,6 +166,7 @@ public class DemandeServiceImpl implements DemandeService {
         } else if (visa.getLieu() == null) {
             throw new RuntimeException("Le lieu du visa est requis");
         }
+        visa.setDemande(savedDemande);
         visaRepository.save(visa);
 
         CarteResident carteResident = new CarteResident();
