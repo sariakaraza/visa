@@ -1,0 +1,72 @@
+TL : ETU003203 Finoana
+Dev Backoffice : ETUO03126 Sandratra et ETU003378 Sariaka
+ 
+Todo Sprint 2 :
+Contexte :
+- On fait seulement les parcours SANS donnees anterieures.
+- Types de demande : DUPLICATA et TRANSFERT.
+- Le flux NOUVEAU_TITRE (Sprint 1) est reutilise.
+
+Objectif metier :
+1) Transfert sans donnees anterieures
+- La personne n'existe pas dans la base.
+- On fait une saisie complete (etat civil + passeport + infos visa).
+- On cree d'abord une demande NOUVEAU_TITRE avec statut APPROUVEE.
+- Ensuite on cree une demande TRANSFERT avec statut CREEE.
+- Le transfert utilise le nouveau passeport et la reference de l'ancien visa saisi.
+
+2) Duplicata sans donnees anterieures
+- On reutilise les donnees du flux cree (nouveau titre/visa).
+- On cree une demande DUPLICATA avec statut CREEE.
+- La demande DUPLICATA est liee a la demande NOUVEAU_TITRE creee.C'est a dire que les deux demandes partagent la meme reference et que le duplicata est un enfant du nouveau titre.
+
+Regles obligatoires :
+- Reference unique auto-generee pour chaque demande.
+- Pour TRANSFERT : passeport obligatoire.
+
+	Sandratra (Backoffice) :
+		- Verifier/adapter les entites : Demande, Dossier, Visa, VisaTransformable, Passeport.
+        - Ajouter reference_demande unique dans la table demande pour l'identification du metier visible.
+        -Ajouter id_demande_parent dans la table demande pour lier les demandes (ex : DUPLICATA lie a NOUVEAU_TITRE).
+        -Ajouter id_type_demande dans dossier pour pouvoir définir des pièces obligatoires par type de demande (NOUVEAU_TITRE, DUPLICATA, TRANSFERT), et pas seulement par type de visa.
+		- Adapter les repositories necessaires :
+			* DossierRepository (dossiers par type_demande et type_visa)
+			* DemandeRepository (verification unicite reference)
+		- Creer un service metier (interface + implementation)  :
+			* createTransfertSansAnterieur(...)
+			* createDuplicataSansAnterieur(...)
+		- Mettre la logique dans @Transactional :
+			* creer NOUVEAU_TITRE (APPROUVEE) dans demande + demande_statut
+            * créer TRANSFERT (CREEE) : lier le nouveau passeport au visa
+            * créer DUPLICATA (CREEE) : créer la carte de résident duplicata liée au flux NOUVEAU_TITRE
+
+			
+		- Faire les controllers/endpoints :
+			* formulaire transfert sans anterieur (GET/POST)
+			* formulaire duplicata sans anterieur (GET/POST)
+			* page recap finale apres creation
+    
+
+
+	Sariaka (Frontend) :
+		- Reprendre le formulaire Sprint 1 et ajouter les champs necessaires :
+			* type_visa
+			* reference visa
+			* champs demandeur:
+			  nom, prenom, nom_jeune_fille, date_naissance, adresse, telephone,
+			  nationalite (id_nationalite), situation_familiale (id_situation_familiale)
+			* infos passeport obligatoires
+		- Faire les pages separees :
+			* transfert sans anterieur
+			* duplicata sans anterieur
+		- Afficher les pieces justificatives selon type_demande/type_visa.
+		- Afficher date_demande par defaut (date du jour).
+		- Afficher une fiche recap apres creation (pas redirection directe liste).
+		- Ajouter bouton "Aller a la liste" dans le recap.
+
+Tests a faire (obligatoire) :
+		- Test transfert sans anterieur :
+			NOUVEAU_TITRE APPROUVEE + TRANSFERT CREEE
+		- Test duplicata sans anterieur :
+			NOUVEAU_TITRE APPROUVEE + DUPLICATA CREEE
+
