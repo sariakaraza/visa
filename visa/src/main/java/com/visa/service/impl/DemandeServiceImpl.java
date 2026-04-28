@@ -1,30 +1,11 @@
 package com.visa.service.impl;
 
-import com.visa.entity.CarteResident;
-import com.visa.entity.Demande;
-import com.visa.entity.DemandeStatut;
-import com.visa.entity.Demandeur;
-import com.visa.entity.Passeport;
-import com.visa.entity.StatutDemande;
-import com.visa.entity.Visa;
-import com.visa.entity.Lieu;
-import com.visa.entity.Nationalite;
-import com.visa.entity.SituationFamiliale;
-import com.visa.repository.CarteResidentRepository;
-import com.visa.repository.DemandeRepository;
-import com.visa.repository.DemandeStatutRepository;
-import com.visa.repository.DemandeurRepository;
-import com.visa.repository.PasseportRepository;
-import com.visa.repository.StatutDemandeRepository;
-import com.visa.repository.TypeDemandeRepository;
-import com.visa.repository.TypeVisaRepository;
-import com.visa.repository.VisaRepository;
-import com.visa.repository.LieuRepository;
-import com.visa.repository.NationaliteRepository;
-import com.visa.repository.SituationFamilialeRepository;
-import com.visa.service.DemandeService;
+import com.visa.entity.*;
+import com.visa.repository.*;
+import com.visa.service.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.sql.Date;
 import java.time.LocalDate;
@@ -47,6 +28,7 @@ public class DemandeServiceImpl implements DemandeService {
     private final NationaliteRepository nationaliteRepository;
     private final SituationFamilialeRepository situationFamilialeRepository;
     private final CarteResidentRepository carteResidentRepository;
+    private final PieceJustificativeService pieceJustificativeService;
 
     public DemandeServiceImpl(
             DemandeRepository demandeRepository,
@@ -60,7 +42,8 @@ public class DemandeServiceImpl implements DemandeService {
             TypeVisaRepository typeVisaRepository,
             NationaliteRepository nationaliteRepository,
             SituationFamilialeRepository situationFamilialeRepository,
-            CarteResidentRepository carteResidentRepository
+            CarteResidentRepository carteResidentRepository,
+            PieceJustificativeService pieceJustificativeService
 
     ) {
         this.demandeRepository = demandeRepository;
@@ -75,6 +58,7 @@ public class DemandeServiceImpl implements DemandeService {
         this.nationaliteRepository = nationaliteRepository;
         this.situationFamilialeRepository = situationFamilialeRepository;
         this.carteResidentRepository = carteResidentRepository;
+        this.pieceJustificativeService = pieceJustificativeService;
 
     }
 
@@ -239,5 +223,52 @@ public class DemandeServiceImpl implements DemandeService {
         carteResidentRepository.save(carteResident);
 
         return savedDemande;
+    }
+
+    @Override
+    @Transactional
+    public void processUploadsForDemande(Integer idDemande, List<MultipartFile> files, List<Integer> idDossiers) {
+        if (idDemande == null) {
+            throw new IllegalArgumentException("idDemande obligatoire");
+        }
+        if (idDossiers == null || idDossiers.isEmpty()) {
+            throw new IllegalArgumentException("Au moins un dossier doit être sélectionné");
+        }
+
+        Demande demande = demandeRepository.findById(idDemande)
+                .orElseThrow(() -> new RuntimeException("Demande introuvable: " + idDemande));
+
+        Integer idDemandeur = demande.getDemandeur() != null ? demande.getDemandeur().getIdDemandeur() : null;
+        if (idDemandeur == null) {
+            throw new RuntimeException("Demandeur introuvable pour la demande: " + idDemande);
+        }
+
+        int fileCount = (files == null) ? 0 : files.size();
+        for (int i = 0; i < idDossiers.size(); i++) {
+            Integer idDossier = idDossiers.get(i);
+            MultipartFile file = (i < fileCount) ? files.get(i) : null;
+
+            boolean hasNewUpload = file != null && !file.isEmpty();
+            if (hasNewUpload) {
+                pieceJustificativeService.uploadAndSavePieceJustificative(file, idDossier, idDemandeur);
+                continue;
+            }
+
+            boolean alreadyExists = !pieceJustificativeService.findByDemandeurAndDossier(idDemandeur, idDossier).isEmpty();
+            if (!alreadyExists) {
+                throw new IllegalArgumentException("Chaque dossier coché doit avoir un fichier uploadé (dossier=" + idDossier + ")");
+            }
+        }
+
+        StatutDemande scanTermine = statutDemandeRepository.findByLibelle("Scan terminé");
+        if (scanTermine == null) {
+            throw new RuntimeException("StatutDemande 'Scan terminé' introuvable. Vérifier les seeds en base.");
+        }
+
+        DemandeStatut demandeStatut = new DemandeStatut();
+        demandeStatut.setDemande(demande);
+        demandeStatut.setStatutDemande(scanTermine);
+        demandeStatut.setDateStatut(Date.valueOf(LocalDate.now()));
+        demandeStatutRepository.save(demandeStatut);
     }
 }

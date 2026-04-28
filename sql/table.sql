@@ -146,6 +146,7 @@ CREATE TABLE dossier(
 CREATE TABLE piece_justificative(
    id_piece_justificative SERIAL,
    date_ajout TIMESTAMP,
+   chemin_fichier VARCHAR(255),
    id_dossier INTEGER NOT NULL,
    id_demandeur INTEGER NOT NULL,
    PRIMARY KEY(id_piece_justificative),

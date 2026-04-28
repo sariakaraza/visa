@@ -7,6 +7,8 @@ import com.visa.entity.Visa;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.web.multipart.MultipartFile;
+
 public interface DemandeService {
     List<Demande> findAll();
     Optional<Demande> findById(Integer id);
@@ -19,4 +21,6 @@ public interface DemandeService {
                                         Integer idTypeDemande, Integer idTypeVisa, Integer idLieuVisa);
 
     Demande createDuplicataAvecDonneesAnterieur(Demandeur demandeur, Integer idTypeDemande);
+
+    void processUploadsForDemande(Integer idDemande, List<MultipartFile> files, List<Integer> idDossiers);
 }
