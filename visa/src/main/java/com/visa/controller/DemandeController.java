@@ -533,6 +533,12 @@ public class DemandeController {
 
         List<Integer> selectedDossiers = pieces.stream().map(p -> p.getDossier().getIdDossier()).toList();
 
+        // Map pour accéder aux pièces par idDossier
+        Map<Integer, PieceJustificative> piecesByDossier = new HashMap<>();
+        for (PieceJustificative piece : pieces) {
+            piecesByDossier.put(piece.getDossier().getIdDossier(), piece);
+        }
+
         List<TypeDemande> typeDemandes = typeDemandeService.findAll();
         List<TypeVisa> typeVisas = typeVisaService.findAll();
         List<Nationalite> nationalites = nationaliteService.findAll();
@@ -571,6 +577,7 @@ public class DemandeController {
         model.addAttribute("lieu", lieu);
         model.addAttribute("visaTransformable", visaTransformable);
         model.addAttribute("selectedDossiers", selectedDossiers);
+        model.addAttribute("piecesByDossier", piecesByDossier);
         model.addAttribute("idTypeDemandeFixed", nouveauTitre.getIdTypeDemande());
         model.addAttribute("typeVisas", typeVisas);
         model.addAttribute("nationalites", nationalites);

@@ -86,9 +86,19 @@
                 <div th:each="dossier : ${dossiersByVisa[typeVisa.idTypeVisa]}" class="checkbox-group">
                     <input type="checkbox" th:id="'dossier-' + ${dossier.idDossier}" th:name="'dossiers'" th:value="${dossier.idDossier}" th:checked="${#lists.contains(selectedDossiers, dossier.idDossier)}">
                     <label th:for="'dossier-' + ${dossier.idDossier}" th:text="${dossier.libelle}"></label>
-                    <div th:each="pj : ${pieces}" th:if="${pj.dossier.idDossier} == ${dossier.idDossier}">
-                        <a th:href="@{/${pj.cheminFichier}}" th:text="${pj.cheminFichier}"></a>
+
+                    <!-- Show existing file if it exists -->
+                    <div th:if="${piecesByDossier[dossier.idDossier]}"
+                         th:with="dateStr=${#dates.format(piecesByDossier[dossier.idDossier].dateAjout, 'dd/MM/yyyy HH:mm')}"
+                         style="margin-top: 6px; padding: 8px; background-color: #f0f0f0; border-radius: 4px;">
+                        <span style="font-size: 0.9em; color: #666;">Fichier actuel:</span>
+                        <a th:href="@{/${piecesByDossier[dossier.idDossier].cheminFichier}}" target="_blank" th:text="${piecesByDossier[dossier.idDossier].cheminFichier}" style="margin: 0 6px; color: #0066cc; text-decoration: underline;"></a>
+                        <span style="font-size: 0.85em; color: #999;" th:text="${'(' + dateStr + ')'}"></span>
+                        <div style="font-size: 0.85em; color: #666; margin-top: 4px;">
+                            Laissez vide pour conserver ce fichier, ou sélectionnez-en un nouveau pour le remplacer.
+                        </div>
                     </div>
+
                     <input type="file" th:id="${'file-' + dossier.idDossier}" name="files" accept="image/*" style="display:none; margin-top:6px;" />
                 </div>
             </div>
@@ -139,6 +149,10 @@
     </div>
 
     <script th:inline="javascript">
+        /*<![CDATA[*/
+
+        const piecesByDossier = /*[[${piecesByDossier}]]*/ {};
+
         function updateDossiers() {
             const typeVisaSelect = document.getElementById('idTypeVisa');
             const selectedTypeVisa = typeVisaSelect.value;
@@ -160,15 +174,21 @@
             const id = cb.value;
             const fileEl = document.getElementById('file-' + id);
             if (!fileEl) return;
+
+            // Check if a file already exists for this dossier
+            const hasExistingFile = Object.keys(piecesByDossier).length > 0 && piecesByDossier[id];
+
             // show file input if checkbox is pre-checked
             if (cb.checked) {
                 fileEl.style.display = 'block';
-                fileEl.required = true;
+                // Only require file input if there's no existing file
+                fileEl.required = !hasExistingFile;
             }
             cb.addEventListener('change', () => {
                 if (cb.checked) {
                     fileEl.style.display = 'block';
-                    fileEl.required = true;
+                    // Only require file input if there's no existing file
+                    fileEl.required = !hasExistingFile;
                 } else {
                     fileEl.style.display = 'none';
                     fileEl.required = false;
@@ -176,6 +196,8 @@
                 }
             });
         });
+
+        /*]]>*/
     </script>
 </body>
 </html>
