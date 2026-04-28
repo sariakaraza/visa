@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Transfert de Visa</title>
+    <link rel="stylesheet" th:href="@{/css/demande.css}">
+</head>
+<body>
+    <div class="app">
+        <aside class="sidebar">
+            <div class="sidebar-title">Demande</div>
+            <nav class="sidebar-nav">
+                <a th:href="@{/demande/new}">Ajout</a>
+                <a th:href="@{/demande/transfert-visa}">Transfert Visa</a>
+                <a th:href="@{/demande/duplicata}">Duplicata</a>
+                <a th:href="@{/demande/list}">Liste</a>
+            </nav>
+        </aside>
+
+        <main class="content">
+            <div class="container">
+                <h1>Transfert de Visa</h1>
+                <p>Choisissez l'option appropriée :</p>
+                <div class="choice-buttons">
+                    <a th:href="@{/demande/transfert-visa/form}" class="btn">Sans données antérieures</a>
+                    <a th:href="@{/demande/transfert-visa/form-anterieur}" class="btn">Avec données antérieures</a>
+                </div>
+            </div>
+        </main>
+    </div>
+</body>
+</html>

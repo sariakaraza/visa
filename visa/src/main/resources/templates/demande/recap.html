@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Récapitulatif de la Demande</title>
+    <link rel="stylesheet" th:href="@{/css/demande.css}">
+</head>
+<body>
+    <div class="app">
+        <aside class="sidebar">
+            <div class="sidebar-title">Demande</div>
+            <nav class="sidebar-nav">
+                <a th:href="@{/demande/new}">Ajout</a>
+                <a th:href="@{/demande/transfert-visa}">Transfert Visa</a>
+                <a th:href="@{/demande/duplicata}">Duplicata</a>
+                <a th:href="@{/demande/list}">Liste</a>
+            </nav>
+        </aside>
+
+        <main class="content">
+            <div class="container">
+                <h1>Récapitulatif de la Demande</h1>
+
+                <div class="recap-section">
+                    <h2>Informations de la Demande</h2>
+                    <p><strong>Référence:</strong> <span th:text="${demande.referenceDemande}"></span></p>
+                    <p><strong>Type de Demande:</strong> <span th:text="${demande.typeDemande.libelle}"></span></p>
+                    <p><strong>Type de Visa:</strong> <span th:text="${demande.typeVisa.libelle}"></span></p>
+                    <p><strong>Date de Demande:</strong> <span th:text="${#dates.format(demande.dateDemande, 'dd/MM/yyyy HH:mm')}"></span></p>
+                    <p><strong>Statut:</strong> <span th:text="${statuts[0].statutDemande.libelle}"></span></p>
+                </div>
+
+                <div class="recap-section">
+                    <h2>Informations du Demandeur</h2>
+                    <p><strong>Nom:</strong> <span th:text="${demande.demandeur.nom}"></span></p>
+                    <p><strong>Prénom:</strong> <span th:text="${demande.demandeur.prenom}"></span></p>
+                    <p><strong>Date de Naissance:</strong> <span th:text="${#dates.format(demande.demandeur.dateNaissance, 'dd/MM/yyyy')}"></span></p>
+                    <p><strong>Nom de jeune fille:</strong> <span th:text="${demande.demandeur.nomJeuneFille}"></span></p>
+                    <p><strong>Téléphone:</strong> <span th:text="${demande.demandeur.telephone}"></span></p>
+                    <p><strong>Adresse:</strong> <span th:text="${demande.demandeur.adresse}"></span></p>
+                    <p><strong>Nationalité:</strong> <span th:text="${demande.demandeur.nationalite.libelle}"></span></p>
+                    <p><strong>Situation Familiale:</strong> <span th:text="${demande.demandeur.situationFamiliale.libelle}"></span></p>
+                </div>
+
+                <div class="recap-section" th:if="${passeport != null}">
+                    <h2>Informations du Passeport</h2>
+                    <p><strong>Numéro:</strong> <span th:text="${passeport.numero}"></span></p>
+                    <p><strong>Date de Délivrance:</strong> <span th:text="${#dates.format(passeport.dateDelivrance, 'dd/MM/yyyy HH:mm')}"></span></p>
+                    <p><strong>Date d'Expiration:</strong> <span th:text="${#dates.format(passeport.dateExpiration, 'dd/MM/yyyy HH:mm')}"></span></p>
+                </div>
+
+                <div class="recap-section">
+                    <h2>Pièces Justificatives</h2>
+                    <ul th:if="${pieces != null and !pieces.isEmpty()}">
+                        <li th:each="piece : ${pieces}" th:text="${piece.dossier.libelle}"></li>
+                    </ul>
+                    <p th:if="${pieces == null or pieces.isEmpty()}">Aucune pièce justificative.</p>
+                </div>
+
+                <div class="actions">
+                    <a th:href="@{/demande/list}" class="btn">Aller à la liste</a>
+                </div>
+            </div>
+        </main>
+    </div>
+</body>
+</html>

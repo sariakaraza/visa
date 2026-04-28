@@ -30,5 +30,9 @@ public class Dossier {
     @JoinColumn(name = "id_type_demande", nullable = false)
     private TypeDemande typeDemande;
 
+    @ManyToOne
+    @JoinColumn(name = "id_type_demande")
+    private TypeDemande typeDemande;
+
 
 }

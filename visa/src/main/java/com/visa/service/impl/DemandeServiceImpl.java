@@ -195,7 +195,7 @@ public class DemandeServiceImpl implements DemandeService {
                 .orElseThrow(() -> new RuntimeException("TypeDemande introuvable")));
         demande.setTypeVisa(derniereDemande.getTypeVisa());
         demande.setDemandeur(demandeur);
-        // demande.setDemandeParent(derniereDemande); // Lien vers la demande parent
+        demande.setDemandeParent(derniereDemande); // Lien vers la demande parent
 
         Demande savedDemande = demandeRepository.save(demande);
 

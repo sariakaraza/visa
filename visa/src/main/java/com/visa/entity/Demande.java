@@ -17,7 +17,13 @@ public class Demande {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer idDemande;
 
+    private String referenceDemande;
+
     private Timestamp dateDemande;
+
+    @ManyToOne
+    @JoinColumn(name = "id_demande_parent")
+    private Demande demandeParent;
 
     @ManyToOne
     @JoinColumn(name = "id_type_demande", nullable = false)

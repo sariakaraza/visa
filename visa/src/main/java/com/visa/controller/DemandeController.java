@@ -32,8 +32,9 @@ public class DemandeController {
     private final SituationFamilialeService situationFamilialeService;
     private final DossierService dossierService;
     private final PieceJustificativeService pieceJustificativeService;
+    private final DemandeStatutService demandeStatutService;
 
-    public DemandeController(DemandeService demandeService, DemandeurService demandeurService, PasseportService passeportService, VisaTransformableService visaTransformableService, LieuService lieuService, TypeDemandeService typeDemandeService, TypeVisaService typeVisaService, NationaliteService nationaliteService, SituationFamilialeService situationFamilialeService, DossierService dossierService, PieceJustificativeService pieceJustificativeService) {
+    public DemandeController(DemandeService demandeService, DemandeurService demandeurService, PasseportService passeportService, VisaTransformableService visaTransformableService, LieuService lieuService, TypeDemandeService typeDemandeService, TypeVisaService typeVisaService, NationaliteService nationaliteService, SituationFamilialeService situationFamilialeService, DossierService dossierService, PieceJustificativeService pieceJustificativeService, DemandeStatutService demandeStatutService) {
         this.demandeService = demandeService;
         this.demandeurService = demandeurService;
         this.passeportService = passeportService;
@@ -45,6 +46,7 @@ public class DemandeController {
         this.situationFamilialeService = situationFamilialeService;
         this.dossierService = dossierService;
         this.pieceJustificativeService = pieceJustificativeService;
+        this.demandeStatutService = demandeStatutService;
     }
 
     @GetMapping("/new")
@@ -66,6 +68,15 @@ public class DemandeController {
             .filter(d -> d.getTypeDemande() != null
                 && d.getTypeDemande().getIdTypeDemande().equals(nouveauTitre.getIdTypeDemande()))
             .toList();
+        Map<Integer, List<Dossier>> dossiersByVisa = new HashMap<>();
+        for (TypeVisa typeVisa : typeVisas) {
+            List<Dossier> dossiersForVisa = dossiers.stream()
+                    .filter(d -> d.getTypeVisa() != null
+                            && d.getTypeVisa().getIdTypeVisa().equals(typeVisa.getIdTypeVisa())
+                            && (d.getTypeDemande() == null || d.getTypeDemande().getIdTypeDemande().equals(nouveauTitre.getIdTypeDemande())))
+                    .toList();
+            dossiersByVisa.put(typeVisa.getIdTypeVisa(), dossiersForVisa);
+        }
 
         model.addAttribute("idTypeDemandeFixed", nouveauTitre.getIdTypeDemande());
         model.addAttribute("typeVisas", typeVisas);
@@ -455,7 +466,24 @@ public class DemandeController {
     @GetMapping("/list")
     public String listDemandes(Model model) {
         List<Demande> demandes = demandeService.findAll();
+        
+        // Create map of demande ID to latest statut
+        Map<Integer, DemandeStatut> statutMap = new HashMap<>();
+        for (Demande demande : demandes) {
+            List<DemandeStatut> statuts = demandeStatutService.findByDemande(demande);
+            if (!statuts.isEmpty()) {
+                DemandeStatut latestStatut = statuts.stream()
+                    .sorted((s1, s2) -> s2.getDateStatut().compareTo(s1.getDateStatut()))
+                    .findFirst()
+                    .orElse(null);
+                if (latestStatut != null) {
+                    statutMap.put(demande.getIdDemande(), latestStatut);
+                }
+            }
+        }
+        
         model.addAttribute("demandes", demandes);
+        model.addAttribute("statutMap", statutMap);
         return "demande/list";
     }
 
