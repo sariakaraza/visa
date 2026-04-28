@@ -444,7 +444,7 @@ public class DemandeController {
     }
 
     @PostMapping("/duplicata/anterieur")
-    public String submitDuplicataAnterieur(
+    public String submitDuplicataAnterieure(
             @RequestParam(required = true) Integer idDemandeur,
             Model model) {
 
