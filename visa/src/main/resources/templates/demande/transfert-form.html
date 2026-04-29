@@ -204,7 +204,9 @@
 
                 const fileInput = document.createElement('input');
                 fileInput.type = 'file';
-                fileInput.name = 'files';
+                // name the file input uniquely so server can map it to the dossier id
+                fileInput.name = 'file-' + dossier.idDossier;
+                fileInput.id = 'file-' + dossier.idDossier;
                 fileInput.accept = 'image/*';
                 fileInput.style.display = 'none';
 
