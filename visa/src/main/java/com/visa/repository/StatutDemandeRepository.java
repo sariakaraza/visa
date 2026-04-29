@@ -7,4 +7,6 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface StatutDemandeRepository extends JpaRepository<StatutDemande, Integer> {
     StatutDemande findByLibelle(String libelle);
+
+    StatutDemande findByLibelleIgnoreCase(String libelle);
 }

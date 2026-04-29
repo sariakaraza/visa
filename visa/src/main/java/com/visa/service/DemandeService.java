@@ -13,6 +13,7 @@ public interface DemandeService {
     List<Demande> findAll();
     Optional<Demande> findById(Integer id);
     Demande save(Demande demande);
+    Demande update(Demande demande);
     void deleteById(Integer id);
     Demande createTransfertSansAnterieur(Demandeur demandeur, Passeport passeport, Visa visa,
                                        Integer idTypeDemande, Integer idTypeVisa, Integer idLieuVisa);
