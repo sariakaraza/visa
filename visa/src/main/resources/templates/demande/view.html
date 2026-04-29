@@ -88,12 +88,21 @@
                     <thead>
                         <tr>
                             <th>Dossier</th>
+                            <th>Aperçu</th>
                             <th>Date ajout</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr th:each="p : ${pieces}">
                             <td th:text="${p.dossier.libelle}"></td>
+                            <td>
+                                <img th:if="${p.cheminFichier != null}" 
+                                    th:src="@{'/' + ${p.cheminFichier}}"
+                                    alt="Aperçu"
+                                    style="max-width:100px; height:auto; border:1px solid #ccc; border-radius:4px;" />
+                                    
+                                <span th:if="${p.cheminFichier == null}">-</span>
+                            </td>
                             <td th:text="${#dates.format(p.dateAjout, 'dd/MM/yyyy HH:mm')}"></td>
                         </tr>
                     </tbody>
