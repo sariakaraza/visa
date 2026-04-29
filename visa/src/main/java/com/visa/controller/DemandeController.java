@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.multipart.MultipartHttpServletRequest;
 
 import java.sql.Date;
 import java.sql.Timestamp;
@@ -108,6 +109,7 @@ public class DemandeController {
             @RequestParam(required = false) Integer idLieuVisa,
             @RequestParam(required = false) List<Integer> dossiers,
             @RequestParam(required = false) List<MultipartFile> files,
+            MultipartHttpServletRequest multipartRequest,
             Model model) {
 
         // Create Demandeur
@@ -151,7 +153,12 @@ public class DemandeController {
 
         // Process uploads (one file per selected dossier). This will also set statut 'Scan terminé' when complete.
         if (dossiers != null && !dossiers.isEmpty()) {
-            demandeService.processUploadsForDemande(savedDemande.getIdDemande(), files, dossiers);
+            java.util.List<MultipartFile> orderedFiles = new java.util.ArrayList<>();
+            for (Integer idDossier : dossiers) {
+                MultipartFile f = multipartRequest.getFile("file-" + idDossier);
+                orderedFiles.add(f);
+            }
+            demandeService.processUploadsForDemande(savedDemande.getIdDemande(), orderedFiles, dossiers);
         }
 
         model.addAttribute("message", "Demande créée avec succès!");
@@ -203,16 +210,28 @@ public class DemandeController {
         List<TypeDemande> typeDemandes = typeDemandeService.findAll();
         List<TypeVisa> typeVisas = typeVisaService.findAll();
         List<Lieu> lieux = lieuService.findAll();
+        List<Dossier> dossiers = dossierService.findAll();
 
         TypeDemande transfert = typeDemandes.stream()
             .filter(td -> td.getLibelle() != null && td.getLibelle().equalsIgnoreCase("Transfert de Visa"))
             .findFirst()
             .orElseThrow(() -> new IllegalStateException("Le type de demande 'Transfert de Visa' est introuvable."));
 
+        Map<Integer, List<Dossier>> dossiersByVisa = new HashMap<>();
+        for (TypeVisa typeVisa : typeVisas) {
+            List<Dossier> dossiersForVisa = dossiers.stream()
+                .filter(d -> d.getTypeVisa() != null
+                    && d.getTypeVisa().getIdTypeVisa().equals(typeVisa.getIdTypeVisa())
+                    && (d.getTypeDemande() == null || d.getTypeDemande().getIdTypeDemande().equals(transfert.getIdTypeDemande())))
+                .toList();
+            dossiersByVisa.put(typeVisa.getIdTypeVisa(), dossiersForVisa);
+        }
+
         model.addAttribute("idTypeDemandeFixed", transfert.getIdTypeDemande());
         model.addAttribute("demandeurs", demandeurs);
         model.addAttribute("typeVisas", typeVisas);
         model.addAttribute("lieux", lieux);
+        model.addAttribute("dossiersByVisa", dossiersByVisa);
 
         return "demande/transfert-form-anterieur";
     }
@@ -222,15 +241,27 @@ public class DemandeController {
         List<Demandeur> demandeurs = demandeurService.findAll();
         List<TypeDemande> typeDemandes = typeDemandeService.findAll();
         List<TypeVisa> typeVisas = typeVisaService.findAll();
+        List<Dossier> dossiers = dossierService.findAll();
 
         TypeDemande duplicata = typeDemandes.stream()
             .filter(td -> td.getLibelle() != null && td.getLibelle().equalsIgnoreCase("Duplicata"))
             .findFirst()
             .orElseThrow(() -> new IllegalStateException("Le type de demande 'Duplicata' est introuvable."));
 
+        Map<Integer, List<Dossier>> dossiersByVisa = new HashMap<>();
+        for (TypeVisa typeVisa : typeVisas) {
+            List<Dossier> dossiersForVisa = dossiers.stream()
+                .filter(d -> d.getTypeVisa() != null
+                    && d.getTypeVisa().getIdTypeVisa().equals(typeVisa.getIdTypeVisa())
+                    && (d.getTypeDemande() == null || d.getTypeDemande().getIdTypeDemande().equals(duplicata.getIdTypeDemande())))
+                .toList();
+            dossiersByVisa.put(typeVisa.getIdTypeVisa(), dossiersForVisa);
+        }
+
         model.addAttribute("idTypeDemandeFixed", duplicata.getIdTypeDemande());
         model.addAttribute("demandeurs", demandeurs);
         model.addAttribute("typeVisas", typeVisas);
+        model.addAttribute("dossiersByVisa", dossiersByVisa);
 
         return "demande/duplicata-form-anterieur";
     }
@@ -318,6 +349,7 @@ public class DemandeController {
             @RequestParam(required = false) Integer idLieuVisa,
             @RequestParam(required = false) List<Integer> dossiers,
             @RequestParam(required = false) List<MultipartFile> files,
+            MultipartHttpServletRequest multipartRequest,
             Model model) {
 
         Demandeur demandeur = new Demandeur();
@@ -352,7 +384,12 @@ public class DemandeController {
 
         Demande created = demandeService.createTransfertSansAnterieur(demandeur, passeport, visa, idTypeDemande, idTypeVisa, idLieuVisa);
         if (dossiers != null && !dossiers.isEmpty()) {
-            demandeService.processUploadsForDemande(created.getIdDemande(), files, dossiers);
+            java.util.List<MultipartFile> orderedFiles = new java.util.ArrayList<>();
+            for (Integer idDossier : dossiers) {
+                MultipartFile f = multipartRequest.getFile("file-" + idDossier);
+                orderedFiles.add(f);
+            }
+            demandeService.processUploadsForDemande(created.getIdDemande(), orderedFiles, dossiers);
         }
         return "redirect:/demande/recap/" + created.getIdDemande();
     }
@@ -378,6 +415,7 @@ public class DemandeController {
             @RequestParam(required = false) Integer idLieuVisa,
             @RequestParam(required = false) List<Integer> dossiers,
             @RequestParam(required = false) List<MultipartFile> files,
+            MultipartHttpServletRequest multipartRequest,
             Model model) {
 
         Demandeur demandeur = new Demandeur();
@@ -413,7 +451,12 @@ public class DemandeController {
 
         Demande created = demandeService.createDuplicataSansAnterieur(demandeur, passeport, visa, idTypeDemande, idTypeVisa, idLieuVisa);
         if (dossiers != null && !dossiers.isEmpty()) {
-            demandeService.processUploadsForDemande(created.getIdDemande(), files, dossiers);
+            java.util.List<MultipartFile> orderedFiles = new java.util.ArrayList<>();
+            for (Integer idDossier : dossiers) {
+                MultipartFile f = multipartRequest.getFile("file-" + idDossier);
+                orderedFiles.add(f);
+            }
+            demandeService.processUploadsForDemande(created.getIdDemande(), orderedFiles, dossiers);
         }
         return "redirect:/demande/recap/" + created.getIdDemande();
     }
@@ -426,6 +469,8 @@ public class DemandeController {
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime dateDelivrancePasseport,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime dateExpirationPasseport,
             @RequestParam(required = false) Integer idLieuVisa,
+            @RequestParam(required = false) List<Integer> dossiers,
+            MultipartHttpServletRequest multipartRequest,
             Model model) {
 
         Demandeur demandeur = demandeurService.findById(idDemandeur).orElseThrow();
@@ -444,12 +489,23 @@ public class DemandeController {
         Demande created = demandeService.createTransfertSansAnterieur(demandeur, passeport, new Visa(), 
             transfert.getIdTypeDemande(), idTypeVisa, idLieuVisa);
 
+        if (dossiers != null && !dossiers.isEmpty()) {
+            java.util.List<MultipartFile> orderedFiles = new java.util.ArrayList<>();
+            for (Integer idDossier : dossiers) {
+                MultipartFile f = multipartRequest.getFile("file-" + idDossier);
+                orderedFiles.add(f);
+            }
+            demandeService.processUploadsForDemande(created.getIdDemande(), orderedFiles, dossiers);
+        }
+
         return "redirect:/demande/recap/" + created.getIdDemande();
     }
 
     @PostMapping("/duplicata/anterieur")
     public String submitDuplicataAnterieure(
             @RequestParam(required = true) Integer idDemandeur,
+            @RequestParam(required = false) List<Integer> dossiers,
+            MultipartHttpServletRequest multipartRequest,
             Model model) {
 
         Demandeur demandeur = demandeurService.findById(idDemandeur).orElseThrow();
@@ -461,6 +517,15 @@ public class DemandeController {
 
         // Utilise la nouvelle méthode qui récupère les données antérieures automatiquement
         Demande created = demandeService.createDuplicataAvecDonneesAnterieur(demandeur, duplicata.getIdTypeDemande());
+
+        if (dossiers != null && !dossiers.isEmpty()) {
+            java.util.List<MultipartFile> orderedFiles = new java.util.ArrayList<>();
+            for (Integer idDossier : dossiers) {
+                MultipartFile f = multipartRequest.getFile("file-" + idDossier);
+                orderedFiles.add(f);
+            }
+            demandeService.processUploadsForDemande(created.getIdDemande(), orderedFiles, dossiers);
+        }
 
         return "redirect:/demande/recap/" + created.getIdDemande();
     }
@@ -685,7 +750,12 @@ public class DemandeController {
         visaTransformableService.save(visaTransformable);
 
         if (dossiers != null && !dossiers.isEmpty()) {
-            demandeService.processUploadsForDemande(id, files, dossiers);
+            java.util.List<MultipartFile> orderedFiles = new java.util.ArrayList<>();
+            for (Integer idDossier : dossiers) {
+                MultipartFile f = multipartRequest.getFile("file-" + idDossier);
+                orderedFiles.add(f);
+            }
+            demandeService.processUploadsForDemande(id, orderedFiles, dossiers);
         }
 
         return "redirect:/demande/list";

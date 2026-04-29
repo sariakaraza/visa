@@ -253,12 +253,22 @@ public class DemandeServiceImpl implements DemandeService {
         }
 
         int fileCount = (files == null) ? 0 : files.size();
+        System.out.println(" ============================= Starting upload processing for demande " + idDemande + ": fileCount=" + fileCount + ", idDossiers=" + idDossiers + " =============================");
         for (int i = 0; i < idDossiers.size(); i++) {
             Integer idDossier = idDossiers.get(i);
             MultipartFile file = (i < fileCount) ? files.get(i) : null;
 
+            System.out.println(" ====================== " + i + " < " + fileCount + " ======================");
+            if (file != null) {
+                System.out.println( " ============================= " + file.getName() + " - " + file.getOriginalFilename() + " - " + file.getSize());
+            } else {
+                System.out.println(" ============================= file is null");
+            }
+
             boolean hasNewUpload = file != null && !file.isEmpty();
+            System.out.println(" ============================= Processing dossier " + idDossier + ": hasNewUpload=" + hasNewUpload + " =============================");
             if (hasNewUpload) {
+                System.out.println(" ========================= Tafiditra ato ilay boucle =========================");
                 pieceJustificativeService.uploadAndSavePieceJustificative(file, idDossier, idDemandeur);
             }
         }
