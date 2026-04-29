@@ -21,6 +21,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+
 @Controller
 @RequestMapping("/demande")
 public class DemandeController {
@@ -678,6 +679,7 @@ public class DemandeController {
             @RequestParam(required = false) Integer idLieuVisa,
             @RequestParam(required = false) List<Integer> dossiers,
             @RequestParam(required = false) List<MultipartFile> files,
+            MultipartHttpServletRequest multipartRequest,
             Model model
     ) {
         Demande demande = demandeService.findById(id).orElseThrow();
