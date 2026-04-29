@@ -36,14 +36,16 @@ INSERT INTO type_visa (libelle) VALUES
 -- =========================
 -- statut_demande
 -- =========================
-INSERT INTO statut_demande (libelle) VALUES
-('Demande créée'),
-('Dossier en cours de traitement'),
-('Pièces complémentaires demandées'),
-('Scan terminé'),
-('Visa approuvé'),
-('Visa refusé'),
-('Demande annulée');
+INSERT INTO statut_demande (id_statut_demande, libelle) VALUES
+(1, 'Demande créée'),
+(2, 'Dossier en cours de traitement'),
+(3, 'Pièces complémentaires demandées'),
+(4, 'Scan terminé'),
+(5, 'Visa approuvé'),
+(6, 'Visa refusé'),
+(7, 'Demande annulée')
+ON CONFLICT (id_statut_demande) DO UPDATE
+SET libelle = EXCLUDED.libelle;
 
 -- =========================
 -- type_demande

@@ -29,6 +29,7 @@ public class DemandeServiceImpl implements DemandeService {
     private final SituationFamilialeRepository situationFamilialeRepository;
     private final CarteResidentRepository carteResidentRepository;
     private final PieceJustificativeService pieceJustificativeService;
+    private final DossierRepository dossierRepository;
 
     public DemandeServiceImpl(
             DemandeRepository demandeRepository,
@@ -43,7 +44,8 @@ public class DemandeServiceImpl implements DemandeService {
             NationaliteRepository nationaliteRepository,
             SituationFamilialeRepository situationFamilialeRepository,
             CarteResidentRepository carteResidentRepository,
-            PieceJustificativeService pieceJustificativeService
+            PieceJustificativeService pieceJustificativeService,
+            DossierRepository dossierRepository
 
     ) {
         this.demandeRepository = demandeRepository;
@@ -59,6 +61,7 @@ public class DemandeServiceImpl implements DemandeService {
         this.situationFamilialeRepository = situationFamilialeRepository;
         this.carteResidentRepository = carteResidentRepository;
         this.pieceJustificativeService = pieceJustificativeService;
+        this.dossierRepository = dossierRepository;
 
     }
 
@@ -91,6 +94,12 @@ public class DemandeServiceImpl implements DemandeService {
         demandeStatutRepository.save(demandeStatut);
 
         return savedDemande;
+    }
+
+    @Override
+    @Transactional
+    public Demande update(Demande demande) {
+        return demandeRepository.save(demande);
     }
 
     @Override
@@ -261,18 +270,40 @@ public class DemandeServiceImpl implements DemandeService {
             if (hasNewUpload) {
                 System.out.println(" ========================= Tafiditra ato ilay boucle =========================");
                 pieceJustificativeService.uploadAndSavePieceJustificative(file, idDossier, idDemandeur);
-                continue;
-            }
-
-            boolean alreadyExists = !pieceJustificativeService.findByDemandeurAndDossier(idDemandeur, idDossier).isEmpty();
-            if (!alreadyExists) {
-                throw new IllegalArgumentException("Chaque dossier coché doit avoir un fichier uploadé (dossier=" + idDossier + ")");
             }
         }
 
-        StatutDemande scanTermine = statutDemandeRepository.findByLibelle("Scan terminé");
-        if (scanTermine == null) {
-            throw new RuntimeException("StatutDemande 'Scan terminé' introuvable. Vérifier les seeds en base.");
+            // Complétude: on ne dépend pas de la liste idDossiers de la requête (qui peut contenir seulement 1 dossier lors d'une modification).
+            // On calcule les dossiers requis depuis la base selon le type de visa (et éventuellement le type de demande).
+            List<Dossier> requiredDossiers = dossierRepository.findByTypeVisa(demande.getTypeVisa());
+            if (demande.getTypeDemande() != null && demande.getTypeDemande().getIdTypeDemande() != null) {
+                Integer idTypeDemande = demande.getTypeDemande().getIdTypeDemande();
+                requiredDossiers = requiredDossiers.stream()
+                    .filter(d -> d.getTypeDemande() == null
+                        || (d.getTypeDemande().getIdTypeDemande() != null
+                        && d.getTypeDemande().getIdTypeDemande().equals(idTypeDemande)))
+                    .toList();
+            }
+
+            boolean allPiecesUploaded = !requiredDossiers.isEmpty() && requiredDossiers.stream()
+                .allMatch(dossier -> !pieceJustificativeService
+                    .findByDemandeurAndDossier(idDemandeur, dossier.getIdDossier())
+                    .isEmpty());
+
+        if (!allPiecesUploaded) {
+            return;
+        }
+
+        StatutDemande scanTermine = statutDemandeRepository.findById(4)
+            .orElseThrow(() -> new RuntimeException(
+                "StatutDemande id=4 ('Scan terminé') introuvable. Exécuter sql/insert.sql ou corriger la table statut_demande."
+            ));
+
+        boolean alreadyMarked = demandeStatutRepository.findByDemande(demande).stream()
+                .anyMatch(ds -> ds.getStatutDemande() != null
+                        && "Scan terminé".equalsIgnoreCase(ds.getStatutDemande().getLibelle()));
+        if (alreadyMarked) {
+            return;
         }
 
         DemandeStatut demandeStatut = new DemandeStatut();

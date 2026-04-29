@@ -138,7 +138,7 @@
             <label for="idLieuVisa">Lieu Visa</label>
             <select id="idLieuVisa" name="idLieuVisa">
                 <option value="">Sélectionnez un lieu</option>
-                <option th:each="lieu : ${lieux}" th:value="${lieu.idLieu}" th:text="${lieu.libelle}" th:selected="${lieu.idLieu == lieu.idLieu}"></option>
+                <option th:each="lieu : ${lieux}" th:value="${lieu.idLieu}" th:text="${lieu.libelle}" th:selected="${visaTransformable != null && visaTransformable.lieu != null && visaTransformable.lieu.idLieu == lieu.idLieu}"></option>
             </select>
         </div>
 

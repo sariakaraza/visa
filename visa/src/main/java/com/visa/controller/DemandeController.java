@@ -539,10 +539,13 @@ public class DemandeController {
         for (Demande demande : demandes) {
             List<DemandeStatut> statuts = demandeStatutService.findByDemande(demande);
             if (!statuts.isEmpty()) {
+                // dateStatut est un java.sql.Date (sans heure). Si 2 statuts sont le même jour,
+                // on départage avec l'ID (auto-increment) pour obtenir le vrai "dernier".
                 DemandeStatut latestStatut = statuts.stream()
-                    .sorted((s1, s2) -> s2.getDateStatut().compareTo(s1.getDateStatut()))
-                    .findFirst()
-                    .orElse(null);
+                        .max(java.util.Comparator
+                                .comparing(DemandeStatut::getDateStatut, java.util.Comparator.nullsLast(java.sql.Date::compareTo))
+                                .thenComparing(DemandeStatut::getIdDemandeStatut, java.util.Comparator.nullsLast(Integer::compareTo)))
+                        .orElse(null);
                 if (latestStatut != null) {
                     statutMap.put(demande.getIdDemande(), latestStatut);
                 }
@@ -654,7 +657,29 @@ public class DemandeController {
     }
 
     @PostMapping("/edit")
-    public String updateForm(@RequestParam Integer id, @RequestParam(required = false) List<Integer> dossiers, @RequestParam(required = false) List<MultipartFile> files, MultipartHttpServletRequest multipartRequest, Model model) {
+    public String updateForm(
+            @RequestParam Integer id,
+            @RequestParam String nom,
+            @RequestParam(required = false) String prenom,
+            @RequestParam String dateNaissance,
+            @RequestParam(required = false) String nomJeuneFille,
+            @RequestParam(required = false) String telephone,
+            @RequestParam String adresse,
+            @RequestParam Integer idNationalite,
+            @RequestParam Integer idSituationFamiliale,
+            @RequestParam Integer idTypeDemande,
+            @RequestParam Integer idTypeVisa,
+            @RequestParam String numeroPasseport,
+            @RequestParam(required = false) String dateDelivrancePasseport,
+            @RequestParam(required = false) String dateExpirationPasseport,
+            @RequestParam(required = false) String referenceVisa,
+            @RequestParam(required = false) String dateEntreeVisa,
+            @RequestParam(required = false) String dateExpirationVisa,
+            @RequestParam(required = false) Integer idLieuVisa,
+            @RequestParam(required = false) List<Integer> dossiers,
+            @RequestParam(required = false) List<MultipartFile> files,
+            Model model
+    ) {
         Demande demande = demandeService.findById(id).orElseThrow();
         // Prevent modifications if current statut == 'Visa approuvé'
         List<DemandeStatut> statuts = demandeStatutService.findByDemande(demande);
@@ -665,6 +690,64 @@ public class DemandeController {
                 return "redirect:/demande/list";
             }
         }
+
+        Demandeur demandeur = demande.getDemandeur();
+        if (demandeur == null) {
+            throw new RuntimeException("Demandeur introuvable pour la demande: " + id);
+        }
+
+        demandeur.setNom(nom);
+        demandeur.setPrenom(prenom);
+        demandeur.setNomJeuneFille(nomJeuneFille);
+        demandeur.setTelephone(telephone);
+        demandeur.setAdresse(adresse);
+        demandeur.setDateNaissance(Date.valueOf(LocalDate.parse(dateNaissance)));
+        demandeur.setNationalite(nationaliteService.findById(idNationalite).orElseThrow());
+        demandeur.setSituationFamiliale(situationFamilialeService.findById(idSituationFamiliale).orElseThrow());
+        Demandeur savedDemandeur = demandeurService.save(demandeur);
+
+        demande.setDemandeur(savedDemandeur);
+        demande.setTypeDemande(typeDemandeService.findById(idTypeDemande).orElseThrow());
+        demande.setTypeVisa(typeVisaService.findById(idTypeVisa).orElseThrow());
+        demandeService.update(demande);
+
+        Passeport passeport = passeportService.findAll().stream()
+                .filter(p -> p.getDemandeur() != null && p.getDemandeur().getIdDemandeur().equals(savedDemandeur.getIdDemandeur()))
+                .findFirst()
+                .orElse(null);
+        if (passeport == null) {
+            passeport = new Passeport();
+            passeport.setDemandeur(savedDemandeur);
+        }
+        passeport.setNumero(numeroPasseport);
+        if (dateDelivrancePasseport != null && !dateDelivrancePasseport.isBlank()) {
+            passeport.setDateDelivrance(Timestamp.valueOf(LocalDateTime.parse(dateDelivrancePasseport)));
+        }
+        if (dateExpirationPasseport != null && !dateExpirationPasseport.isBlank()) {
+            passeport.setDateExpiration(Timestamp.valueOf(LocalDateTime.parse(dateExpirationPasseport)));
+        }
+        Passeport savedPasseport = passeportService.save(passeport);
+
+        VisaTransformable visaTransformable = visaTransformableService.findAll().stream()
+                .filter(v -> v.getPasseport() != null && v.getPasseport().getIdPasseport().equals(savedPasseport.getIdPasseport()))
+                .findFirst()
+                .orElse(null);
+        if (visaTransformable == null) {
+            visaTransformable = new VisaTransformable();
+            visaTransformable.setPasseport(savedPasseport);
+        }
+        visaTransformable.setReference(referenceVisa);
+        if (dateEntreeVisa != null && !dateEntreeVisa.isBlank()) {
+            visaTransformable.setDateEntree(Date.valueOf(LocalDate.parse(dateEntreeVisa)));
+        }
+        if (dateExpirationVisa != null && !dateExpirationVisa.isBlank()) {
+            visaTransformable.setDateExpiration(Timestamp.valueOf(LocalDateTime.parse(dateExpirationVisa)));
+        }
+
+        if (idLieuVisa != null) {
+            visaTransformable.setLieu(lieuService.findById(idLieuVisa).orElseThrow());
+        }
+        visaTransformableService.save(visaTransformable);
 
         if (dossiers != null && !dossiers.isEmpty()) {
             java.util.List<MultipartFile> orderedFiles = new java.util.ArrayList<>();
