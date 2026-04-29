@@ -21,7 +21,7 @@
             <div class="container">
                 <h1>Formulaire de Nouvelle Demande de Visa</h1>
 
-                <form th:action="@{/demande/new}" method="post">
+                <form th:action="@{/demande/new}" method="post" enctype="multipart/form-data">
                     <div class="form-group">
                         <label for="nom">Nom *</label>
                         <input type="text" id="nom" name="nom" required>
@@ -202,8 +202,33 @@
                 const span = document.createElement('span');
                 span.textContent = ` ${dossier.libelle}`;
 
+                // file input tied to this checkbox
+                const fileInput = document.createElement('input');
+                fileInput.type = 'file';
+                fileInput.name = 'files';
+                fileInput.accept = 'image/*';
+                fileInput.style.display = 'none';
+
+                checkbox.addEventListener('change', function() {
+                    const checkedCount = document.querySelectorAll('input[name="dossiers"]:checked').length;
+                    if (this.checked) {
+                        if (checkedCount > 15) {
+                            alert('Maximum 15 dossiers peuvent être sélectionnés à la fois.');
+                            this.checked = false;
+                            return;
+                        }
+                        fileInput.style.display = 'block';
+                        fileInput.required = true;
+                    } else {
+                        fileInput.style.display = 'none';
+                        fileInput.required = false;
+                        fileInput.value = null;
+                    }
+                });
+
                 label.appendChild(checkbox);
                 label.appendChild(span);
+                label.appendChild(fileInput);
                 dossiersContainer.appendChild(label);
             });
         }
