@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.multipart.MultipartHttpServletRequest;
 
 import java.sql.Date;
 import java.sql.Timestamp;
@@ -108,6 +109,7 @@ public class DemandeController {
             @RequestParam(required = false) Integer idLieuVisa,
             @RequestParam(required = false) List<Integer> dossiers,
             @RequestParam(required = false) List<MultipartFile> files,
+            MultipartHttpServletRequest multipartRequest,
             Model model) {
 
         // Create Demandeur
@@ -151,7 +153,12 @@ public class DemandeController {
 
         // Process uploads (one file per selected dossier). This will also set statut 'Scan terminé' when complete.
         if (dossiers != null && !dossiers.isEmpty()) {
-            demandeService.processUploadsForDemande(savedDemande.getIdDemande(), files, dossiers);
+            java.util.List<MultipartFile> orderedFiles = new java.util.ArrayList<>();
+            for (Integer idDossier : dossiers) {
+                MultipartFile f = multipartRequest.getFile("file-" + idDossier);
+                orderedFiles.add(f);
+            }
+            demandeService.processUploadsForDemande(savedDemande.getIdDemande(), orderedFiles, dossiers);
         }
 
         model.addAttribute("message", "Demande créée avec succès!");
@@ -318,6 +325,7 @@ public class DemandeController {
             @RequestParam(required = false) Integer idLieuVisa,
             @RequestParam(required = false) List<Integer> dossiers,
             @RequestParam(required = false) List<MultipartFile> files,
+            MultipartHttpServletRequest multipartRequest,
             Model model) {
 
         Demandeur demandeur = new Demandeur();
@@ -352,7 +360,12 @@ public class DemandeController {
 
         Demande created = demandeService.createTransfertSansAnterieur(demandeur, passeport, visa, idTypeDemande, idTypeVisa, idLieuVisa);
         if (dossiers != null && !dossiers.isEmpty()) {
-            demandeService.processUploadsForDemande(created.getIdDemande(), files, dossiers);
+            java.util.List<MultipartFile> orderedFiles = new java.util.ArrayList<>();
+            for (Integer idDossier : dossiers) {
+                MultipartFile f = multipartRequest.getFile("file-" + idDossier);
+                orderedFiles.add(f);
+            }
+            demandeService.processUploadsForDemande(created.getIdDemande(), orderedFiles, dossiers);
         }
         return "redirect:/demande/recap/" + created.getIdDemande();
     }
@@ -378,6 +391,7 @@ public class DemandeController {
             @RequestParam(required = false) Integer idLieuVisa,
             @RequestParam(required = false) List<Integer> dossiers,
             @RequestParam(required = false) List<MultipartFile> files,
+            MultipartHttpServletRequest multipartRequest,
             Model model) {
 
         Demandeur demandeur = new Demandeur();
@@ -413,7 +427,12 @@ public class DemandeController {
 
         Demande created = demandeService.createDuplicataSansAnterieur(demandeur, passeport, visa, idTypeDemande, idTypeVisa, idLieuVisa);
         if (dossiers != null && !dossiers.isEmpty()) {
-            demandeService.processUploadsForDemande(created.getIdDemande(), files, dossiers);
+            java.util.List<MultipartFile> orderedFiles = new java.util.ArrayList<>();
+            for (Integer idDossier : dossiers) {
+                MultipartFile f = multipartRequest.getFile("file-" + idDossier);
+                orderedFiles.add(f);
+            }
+            demandeService.processUploadsForDemande(created.getIdDemande(), orderedFiles, dossiers);
         }
         return "redirect:/demande/recap/" + created.getIdDemande();
     }
@@ -589,7 +608,7 @@ public class DemandeController {
     }
 
     @PostMapping("/edit")
-    public String updateForm(@RequestParam Integer id, @RequestParam(required = false) List<Integer> dossiers, @RequestParam(required = false) List<MultipartFile> files, Model model) {
+    public String updateForm(@RequestParam Integer id, @RequestParam(required = false) List<Integer> dossiers, @RequestParam(required = false) List<MultipartFile> files, MultipartHttpServletRequest multipartRequest, Model model) {
         Demande demande = demandeService.findById(id).orElseThrow();
         // Prevent modifications if current statut == 'Visa approuvé'
         List<DemandeStatut> statuts = demandeStatutService.findByDemande(demande);
@@ -602,7 +621,12 @@ public class DemandeController {
         }
 
         if (dossiers != null && !dossiers.isEmpty()) {
-            demandeService.processUploadsForDemande(id, files, dossiers);
+            java.util.List<MultipartFile> orderedFiles = new java.util.ArrayList<>();
+            for (Integer idDossier : dossiers) {
+                MultipartFile f = multipartRequest.getFile("file-" + idDossier);
+                orderedFiles.add(f);
+            }
+            demandeService.processUploadsForDemande(id, orderedFiles, dossiers);
         }
 
         return "redirect:/demande/list";

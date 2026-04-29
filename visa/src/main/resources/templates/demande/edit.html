@@ -99,7 +99,7 @@
                         </div>
                     </div>
 
-                    <input type="file" th:id="${'file-' + dossier.idDossier}" name="files" accept="image/*" style="display:none; margin-top:6px;" />
+                    <input type="file" th:id="${'file-' + dossier.idDossier}" th:name="${'file-' + dossier.idDossier}" accept="image/*" style="display:none; margin-top:6px;" />
                 </div>
             </div>
         </div>
@@ -181,16 +181,24 @@
             // show file input if checkbox is pre-checked
             if (cb.checked) {
                 fileEl.style.display = 'block';
+                fileEl.disabled = false;
                 // Only require file input if there's no existing file
                 fileEl.required = !hasExistingFile;
+            } else {
+                fileEl.style.display = 'none';
+                fileEl.disabled = true;
+                fileEl.required = false;
+                fileEl.value = null;
             }
             cb.addEventListener('change', () => {
                 if (cb.checked) {
                     fileEl.style.display = 'block';
+                    fileEl.disabled = false;
                     // Only require file input if there's no existing file
                     fileEl.required = !hasExistingFile;
                 } else {
                     fileEl.style.display = 'none';
+                    fileEl.disabled = true;
                     fileEl.required = false;
                     fileEl.value = null;
                 }
