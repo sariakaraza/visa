@@ -474,10 +474,13 @@ public class DemandeController {
         for (Demande demande : demandes) {
             List<DemandeStatut> statuts = demandeStatutService.findByDemande(demande);
             if (!statuts.isEmpty()) {
+                // dateStatut est un java.sql.Date (sans heure). Si 2 statuts sont le même jour,
+                // on départage avec l'ID (auto-increment) pour obtenir le vrai "dernier".
                 DemandeStatut latestStatut = statuts.stream()
-                    .sorted((s1, s2) -> s2.getDateStatut().compareTo(s1.getDateStatut()))
-                    .findFirst()
-                    .orElse(null);
+                        .max(java.util.Comparator
+                                .comparing(DemandeStatut::getDateStatut, java.util.Comparator.nullsLast(java.sql.Date::compareTo))
+                                .thenComparing(DemandeStatut::getIdDemandeStatut, java.util.Comparator.nullsLast(Integer::compareTo)))
+                        .orElse(null);
                 if (latestStatut != null) {
                     statutMap.put(demande.getIdDemande(), latestStatut);
                 }
