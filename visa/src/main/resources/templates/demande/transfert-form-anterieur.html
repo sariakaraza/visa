@@ -21,7 +21,7 @@
             <div class="container">
                 <h1>Transfert de Visa (Avec données antérieures)</h1>
 
-                <form th:action="@{/demande/transfert-visa/anterieur}" method="post">
+                <form th:action="@{/demande/transfert-visa/anterieur}" method="post" enctype="multipart/form-data">
                     <div class="form-group">
                         <label for="idDemandeur">Sélectionner Demandeur *</label>
                         <select id="idDemandeur" name="idDemandeur" required onchange="loadDemandeurInfo();">
@@ -55,9 +55,15 @@
                         <label>Type de Visa *</label>
                         <div class="radio-group">
                             <label th:each="tv : ${typeVisas}">
-                                <input type="radio" name="idTypeVisa" th:value="${tv.idTypeVisa}" required>
+                                <input type="radio" name="idTypeVisa" th:value="${tv.idTypeVisa}" required onchange="filterDossiersByVisa();">
                                 <span th:text="${tv.libelle}"></span>
                             </label>
+                        </div>
+                    </div>
+
+                    <div id="dossiersSection" class="form-group">
+                        <label>Dossiers Requis</label>
+                        <div class="checkbox-group" id="dossiersContainer">
                         </div>
                     </div>
 
@@ -97,6 +103,65 @@
         /*<![CDATA[*/
 
         const demandeursData = /*[[${demandeurs}]]*/ [];
+        const dossiersByVisa = /*[[${dossiersByVisa}]]*/ {};
+
+        function filterDossiersByVisa() {
+            const selectedVisaType = document.querySelector('input[name="idTypeVisa"]:checked');
+            const dossiersContainer = document.getElementById('dossiersContainer');
+
+            dossiersContainer.innerHTML = '';
+
+            if (!selectedVisaType) {
+                return;
+            }
+
+            const visaId = selectedVisaType.value;
+            const dossiers = dossiersByVisa[visaId] || [];
+
+            if (dossiers.length === 0) {
+                const emptyLabel = document.createElement('label');
+                emptyLabel.textContent = 'Aucun dossier requis pour ce type de visa.';
+                dossiersContainer.appendChild(emptyLabel);
+                return;
+            }
+
+            dossiers.forEach((dossier) => {
+                const label = document.createElement('label');
+                label.style.display = 'block';
+                label.style.marginBottom = '8px';
+
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.name = 'dossiers';
+                checkbox.value = dossier.idDossier;
+
+                const span = document.createElement('span');
+                span.textContent = ` ${dossier.libelle}`;
+
+                const fileInput = document.createElement('input');
+                fileInput.type = 'file';
+                fileInput.name = 'file-' + dossier.idDossier;
+                fileInput.id = 'file-' + dossier.idDossier;
+                fileInput.accept = 'image/*';
+                fileInput.style.display = 'none';
+
+                checkbox.addEventListener('change', function() {
+                    if (this.checked) {
+                        fileInput.style.display = 'block';
+                        fileInput.required = true;
+                    } else {
+                        fileInput.style.display = 'none';
+                        fileInput.required = false;
+                        fileInput.value = null;
+                    }
+                });
+
+                label.appendChild(checkbox);
+                label.appendChild(span);
+                label.appendChild(fileInput);
+                dossiersContainer.appendChild(label);
+            });
+        }
 
         function loadDemandeurInfo() {
             const idDemandeur = document.getElementById('idDemandeur').value;
@@ -118,7 +183,12 @@
             document.getElementById('infoDemandeurSituation').textContent = (demandeur.situationFamiliale ? demandeur.situationFamiliale.libelle : '-');
 
             demandeurInfoSection.classList.remove('hidden');
+
         }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            filterDossiersByVisa();
+        });
 
         /*]]>*/
     </script>

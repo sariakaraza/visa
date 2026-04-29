@@ -46,7 +46,7 @@
                             <td>
                                 <div class="actions">
                                     <a class="btn btn-secondary" th:href="@{/demande/{id}(id=${demande.idDemande})}">Voir</a>
-                                    <a class="btn" th:href="@{/demande/edit/{id}(id=${demande.idDemande})}">Modifier</a>
+                                    <a class="btn" th:if="${statutMap[demande.idDemande] == null or statutMap[demande.idDemande].statutDemande == null or (statutMap[demande.idDemande].statutDemande.libelle != 'Visa approuvé' and statutMap[demande.idDemande].statutDemande.libelle != 'Visa approuve')}" th:href="@{/demande/edit/{id}(id=${demande.idDemande})}">Modifier</a>
                                 </div>
                             </td>
                         </tr>
