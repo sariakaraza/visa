@@ -1,0 +1,165 @@
+TL : ETUO03378 Sariaka
+Dev Backoffice : ETU003126 Sandratra et ETU003203 Finoana
+
+Objectif du sprint 4
+--------------------
+Quand une nouvelle demande est créée, générer un QR code dont le contenu est une URL pointant vers un front externe (VueJS). Sauvegarder cette information en base (URL et chemin de l'image QR). Côté front VueJS (dossier `front` au même niveau que le dossier `visa`), créer une page publique qui reçoit un `numDemande` ou `numPasseport`, appelle l'API backend pour récupérer l'historique des statuts et affiche la timeline.
+
+-- Finoana (Backend / Java)
+
+* SQL :
+
+	* Ajouter une colonne dans la table `demande` pour stocker :
+
+		- `chemin_qr` VARCHAR(255) — chemin relatif du fichier image PNG généré
+
+		Exemple SQL :
+
+		ALTER TABLE demande ADD COLUMN chemin_qr VARCHAR(255);
+
+
+* Entité :
+
+	* Modifier l'entité `Demande` :
+
+		- ajouter `private String cheminQr;` avec `@Column(name = "chemin_qr")`
+		- ajouter getters/setters
+
+* Dépendances :
+
+	* Ajouter ZXing (ou équivalent) au `pom.xml` pour générer les QR codes :
+
+		<dependency>
+			<groupId>com.google.zxing</groupId>
+			<artifactId>core</artifactId>
+			<version>3.5.1</version>
+		</dependency>
+		<dependency>
+			<groupId>com.google.zxing</groupId>
+			<artifactId>javase</artifactId>
+			<version>3.5.1</version>
+		</dependency>
+
+* Services :
+
+	* Dans `DemandeService` (interface + impl) :
+
+
+		- créer `void generateAndSaveQrForDemande(Integer idDemande)`
+
+		  - récupérer la `Demande` en base
+		  - construire l'URL publique qui sera encodée dans le QR :
+		    `{frontend.externalBaseUrl}/scan?numDemande={numeroDemande}` (ou `?numPasseport=...` selon dispo)
+		  - générer le QR (PNG) via ZXing — le QR contiendra l'URL construite, mais L'URL NE SERA PAS PERSISTEE EN BASE
+		  - sauvegarder le PNG dans un dossier local accessible (ex : `uploads/qr/qr_{id}_{uuid}.png`)
+		  - remplir `demande.setCheminQr("uploads/qr/...")` et sauvegarder la demande (NE PAS stocker l'URL du QR en base)
+
+		- appeler `generateAndSaveQrForDemande()` à la fin de `createDemande()` (après persistance pour disposer de l'ID)
+		- prévoir une méthode utilitaire `regenerateQrForDemande(Integer idDemande)` pour regénérer si besoin (toujours sans persister l'URL)
+
+	* Dans `DemandeRepository` :
+
+		- ajouter méthode(s) pour retrouver une demande par `numeroDemande` ou par `passeport` (ex : `findByNumeroDemande(String numero)` / `findByDemandeurPasseport(String numPasseport)`)
+
+	* Contrôleurs / API :
+
+	* Ajouter un endpoint public (REST) pour l'historique des statuts :
+
+		- GET `/api/demandes/history?numDemande=XXX` ou `/api/demandes/history?numPasseport=YYY`
+		- réponse : JSON contenant la liste des statuts `{date, statutLibelle, commentaire}` et quelques infos demande (id, numero, nom demandeur)
+		- controller implementation : méthode dédiée dans `DemandeRestController` (ne pas confondre avec les endpoints internes d'admin)
+
+	* Modifier la page de visualisation côté back-office (`templates/demande/view.html`) :
+
+		- dans le modèle Thymeleaf exposer `cheminQr` (chemin relatif vers l'image)
+		- afficher l'image QR (balise `<img src="/..." />`). L'URL encodée dans le QR n'est PAS persistée en base ; si besoin d'afficher un lien admin, reconstruire l'URL à la volée à partir de `frontend.externalBaseUrl` et du `numeroDemande`
+		- prévoir bouton `Regénérer le QR` si l'utilisateur admin doit pouvoir regénérer (toujours sans persister l'URL)
+
+* WebConfig / CORS :
+
+	* Autoriser le front VueJS à appeler l'API (ajouter origine `frontend.externalBaseUrl` dans `WebConfig.java` ou configurer `@CrossOrigin` sur l'API)
+
+* Chemins & stockage :
+
+	* Créer le dossier `uploads/qr/` (même arborescence que `uploads/pieces/`)
+	* Stocker les images QR en chemin relatif (ex : `uploads/qr/qr_123_abcd.png`) pour servir via `src/main/resources/static` ou config de static files
+
+* Configuration :
+
+	* Ajouter dans `application.properties` (exemple) :
+
+		frontend.externalBaseUrl=http://localhost:5173
+		uploads.qr.folder=uploads/qr
+
+-- Sariaka (Frontend VueJS)
+
+Contrainte demandée : le front VueJS est placé au même niveau que le dossier du projet `visa` (ex: si project est `.../visa`, créer `.../front`)
+
+* Initialisation projet Vue :
+
+	* Dans le dossier parent (au même niveau que `visa`) :
+
+		- créer le dossier `front` et initialiser un projet Vite + Vue 3 :
+
+			npm create vite@latest front -- --template vue
+			cd front
+			npm install
+
+		- démarrer : `npm run dev` (port par défaut 5173)
+
+* Structure & composants :
+
+	* Pages / composants à créer :
+
+		- `src/views/ScanPage.vue` : page publique contenant le formulaire de recherche
+		- `src/components/ScanForm.vue` : formulaire qui reçoit `numDemande` ou `numPasseport`
+		- `src/components/StatusTimeline.vue` : rendu de l'historique des statuts (date + libellé + commentaire)
+
+* Fonctionnalité du formulaire :
+
+	* Champs :
+
+		- champ text `numDemande` (optionnel)
+		- champ text `numPasseport` (optionnel)
+		- validation : au moins un des deux renseigné
+
+	* À la soumission :
+
+		- effectuer un appel GET vers l'API backend :
+			`${VITE_API_BASE_URL}/api/demandes/history?numDemande=...` ou `?numPasseport=...`
+		- afficher un état "chargement" puis la timeline si OK
+		- gérer erreurs 404 / 400 / réseau
+
+* Variables d'environnement :
+
+	* créer `.env` (dev) :
+
+		VITE_API_BASE_URL=http://localhost:8080
+
+* UI / UX :
+
+	* Afficher :
+
+		- informations de la demande (numéro, nom demandeur, date de création)
+		- le `StatusTimeline` contenant les entrées triées chronologiquement
+		- si la demande possède un `qrCode` (contenu URL), afficher aussi un bouton "Ouvrir la page publique" (ouvre le lien du QR)
+
+* Sécurité & CORS :
+
+	* Si l'API backend doit rester publique pour ce endpoint, limiter les informations retournées (ne pas exposer données sensibles)
+
+
+Points d'attention / remarques
+------------------------------
+
+- Le contenu du QR doit être l'URL publique du front (ex : `http://localhost:5173/scan?numDemande=123`), MAIS l'URL ne doit PAS être enregistrée en base. Seul le PNG du QR est sauvegardé (`chemin_qr`).
+- Penser à la génération d'un identifiant non prévisible si vous exposez des données sensibles (optionnel : token d'accès dans l'URL). Pour la version initiale, un `numDemande` non secret peut suffire.
+- S'assurer que les fichiers `uploads/qr` sont servis par Spring (static resources) ou via un endpoint dédié.
+
+Critères d'acceptation
+----------------------
+
+- Lors de la création d'une nouvelle demande, une URL publique est encodée dans le QR (mais non persistée) et un fichier PNG est créé et référencé en DB dans `chemin_qr`.
+- Dans la page de visualisation back-office la vignette QR est affichée (image) ; l'URL exacte n'est pas stockée mais peut être reconstruite à la volée pour affichage/admin si nécessaire.
+- Le front VueJS permet d'entrer `numDemande` ou `numPasseport`, appelle l'API et affiche proprement l'historique des statuts.
+
