@@ -15,6 +15,8 @@ public interface DemandeService {
     Demande save(Demande demande);
     Demande update(Demande demande);
     void deleteById(Integer id);
+    Optional<Demande> findByReferenceDemande(String referenceDemande);
+    Optional<Demande> findByPasseportNumero(String numero);
     Demande createTransfertSansAnterieur(Demandeur demandeur, Passeport passeport, Visa visa,
                                        Integer idTypeDemande, Integer idTypeVisa, Integer idLieuVisa);
 

@@ -76,6 +76,16 @@ public class DemandeServiceImpl implements DemandeService {
     }
 
     @Override
+    public Optional<Demande> findByReferenceDemande(String referenceDemande) {
+        return demandeRepository.findByReferenceDemande(referenceDemande);
+    }
+
+    @Override
+    public Optional<Demande> findByPasseportNumero(String numero) {
+        return demandeRepository.findByPasseportNumero(numero);
+    }
+
+    @Override
     @Transactional
     public Demande save(Demande demande) {
 
