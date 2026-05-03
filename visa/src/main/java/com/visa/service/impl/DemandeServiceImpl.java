@@ -3,14 +3,27 @@ package com.visa.service.impl;
 import com.visa.entity.*;
 import com.visa.repository.*;
 import com.visa.service.*;
+import com.google.zxing.BarcodeFormat;
+import com.google.zxing.WriterException;
+import com.google.zxing.client.j2se.MatrixToImageWriter;
+import com.google.zxing.common.BitMatrix;
+import com.google.zxing.qrcode.QRCodeWriter;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.sql.Date;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @Service
 public class DemandeServiceImpl implements DemandeService {
@@ -31,6 +44,10 @@ public class DemandeServiceImpl implements DemandeService {
     private final PieceJustificativeService pieceJustificativeService;
     private final DossierRepository dossierRepository;
 
+    private final String uploadBaseDir;
+    private final String uploadsQrSubdir;
+    private final String frontendExternalBaseUrl;
+
     public DemandeServiceImpl(
             DemandeRepository demandeRepository,
             DemandeStatutRepository demandeStatutRepository,
@@ -45,7 +62,10 @@ public class DemandeServiceImpl implements DemandeService {
             SituationFamilialeRepository situationFamilialeRepository,
             CarteResidentRepository carteResidentRepository,
             PieceJustificativeService pieceJustificativeService,
-            DossierRepository dossierRepository
+                DossierRepository dossierRepository,
+                @Value("${app.upload.base-dir:uploads}") String uploadBaseDir,
+                @Value("${uploads.qr.subdir:qr}") String uploadsQrSubdir,
+                @Value("${frontend.externalBaseUrl:http://localhost:5173}") String frontendExternalBaseUrl
 
     ) {
         this.demandeRepository = demandeRepository;
@@ -62,6 +82,10 @@ public class DemandeServiceImpl implements DemandeService {
         this.carteResidentRepository = carteResidentRepository;
         this.pieceJustificativeService = pieceJustificativeService;
         this.dossierRepository = dossierRepository;
+
+        this.uploadBaseDir = uploadBaseDir;
+        this.uploadsQrSubdir = uploadsQrSubdir;
+        this.frontendExternalBaseUrl = frontendExternalBaseUrl;
 
     }
 
@@ -92,6 +116,9 @@ public class DemandeServiceImpl implements DemandeService {
         demandeStatut.setDateStatut(Date.valueOf(LocalDate.now()));
 
         demandeStatutRepository.save(demandeStatut);
+
+        // Génération QR après persistance (besoin de l'ID)
+        generateAndSaveQrForDemande(savedDemande.getIdDemande());
 
         return savedDemande;
     }
@@ -141,6 +168,8 @@ public class DemandeServiceImpl implements DemandeService {
         demande.setDemandeur(savedDemandeur);
 
         Demande savedDemande = demandeRepository.save(demande);
+
+        generateAndSaveQrForDemande(savedDemande.getIdDemande());
 
         StatutDemande initialStatus = statutDemandeRepository.findByLibelle("Visa approuvé");
 
@@ -214,6 +243,8 @@ public class DemandeServiceImpl implements DemandeService {
 
         Demande savedDemande = demandeRepository.save(demande);
 
+        generateAndSaveQrForDemande(savedDemande.getIdDemande());
+
         // Crée le statut initial
         StatutDemande initialStatus = statutDemandeRepository.findByLibelle("Visa approuvé");
         DemandeStatut demandeStatut = new DemandeStatut();
@@ -232,6 +263,61 @@ public class DemandeServiceImpl implements DemandeService {
         carteResidentRepository.save(carteResident);
 
         return savedDemande;
+    }
+
+    @Override
+    @Transactional
+    public void generateAndSaveQrForDemande(Integer idDemande) {
+        if (idDemande == null) {
+            throw new IllegalArgumentException("idDemande obligatoire");
+        }
+
+        Demande demande = demandeRepository.findById(idDemande)
+                .orElseThrow(() -> new RuntimeException("Demande introuvable: " + idDemande));
+
+        // Évite de régénérer à chaque appel si déjà présent
+        if (demande.getCheminQr() != null && !demande.getCheminQr().isBlank()) {
+            return;
+        }
+
+        String numDemande = (demande.getReferenceDemande() != null && !demande.getReferenceDemande().isBlank())
+                ? demande.getReferenceDemande()
+                : String.valueOf(demande.getIdDemande());
+
+        String encoded = URLEncoder.encode(numDemande, StandardCharsets.UTF_8);
+        String url = frontendExternalBaseUrl + "/scan?numDemande=" + encoded;
+
+        String filename = "qr_" + demande.getIdDemande() + "_" + UUID.randomUUID() + ".png";
+        String relativePath = Paths.get(uploadBaseDir, uploadsQrSubdir, filename).toString().replace('\\', '/');
+        Path targetPath = Paths.get(System.getProperty("user.dir")).resolve(relativePath);
+
+        try {
+            Files.createDirectories(targetPath.getParent());
+            BitMatrix matrix = new QRCodeWriter().encode(url, BarcodeFormat.QR_CODE, 300, 300);
+            MatrixToImageWriter.writeToPath(matrix, "PNG", targetPath);
+        } catch (WriterException | IOException e) {
+            throw new RuntimeException("Erreur lors de la génération du QR code", e);
+        }
+
+        demande.setCheminQr(relativePath);
+        demandeRepository.save(demande);
+    }
+
+    @Override
+    @Transactional
+    public void regenerateQrForDemande(Integer idDemande) {
+        if (idDemande == null) {
+            throw new IllegalArgumentException("idDemande obligatoire");
+        }
+
+        Demande demande = demandeRepository.findById(idDemande)
+                .orElseThrow(() -> new RuntimeException("Demande introuvable: " + idDemande));
+
+        // Force régénération
+        demande.setCheminQr(null);
+        demandeRepository.save(demande);
+
+        generateAndSaveQrForDemande(idDemande);
     }
 
     @Override

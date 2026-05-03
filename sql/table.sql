@@ -71,11 +71,15 @@ CREATE TABLE demande(
    id_type_demande INTEGER NOT NULL,
    id_type_visa INTEGER NOT NULL,
    id_demandeur INTEGER NOT NULL,
+   chemin_qr VARCHAR(255),
    PRIMARY KEY(id_demande),
    FOREIGN KEY(id_type_demande) REFERENCES type_demande(id_type_demande),
    FOREIGN KEY(id_type_visa) REFERENCES type_visa(id_type_visa),
    FOREIGN KEY(id_demandeur) REFERENCES demandeur(id_demandeur)
 );
+
+-- Sprint 4 (si la table existe déjà)
+-- ALTER TABLE demande ADD COLUMN IF NOT EXISTS chemin_qr VARCHAR(255);
 
 CREATE TABLE demande_statut(
    id_demande_statut SERIAL,

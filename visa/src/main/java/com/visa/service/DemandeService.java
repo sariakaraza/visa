@@ -24,4 +24,8 @@ public interface DemandeService {
     Demande createDuplicataAvecDonneesAnterieur(Demandeur demandeur, Integer idTypeDemande);
 
     void processUploadsForDemande(Integer idDemande, List<MultipartFile> files, List<Integer> idDossiers);
+
+    void generateAndSaveQrForDemande(Integer idDemande);
+
+    void regenerateQrForDemande(Integer idDemande);
 }
