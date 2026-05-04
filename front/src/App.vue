@@ -1,7 +1,7 @@
 <script setup>
-import HelloWorld from './components/HelloWorld.vue'
+import ScanPage from './views/ScanPage.vue';
 </script>
 
 <template>
-  <HelloWorld />
+  <ScanPage />
 </template>
