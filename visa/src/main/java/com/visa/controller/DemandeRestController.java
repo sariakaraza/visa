@@ -37,9 +37,14 @@ public class DemandeRestController {
         }
 
         Optional<Demande> demandeOpt = Optional.empty();
+        
+        // D'abord chercher par numéro de demande
         if (numDemande != null && !numDemande.trim().isEmpty()) {
             demandeOpt = demandeService.findByReferenceDemande(numDemande.trim());
-        } else if (numPasseport != null && !numPasseport.trim().isEmpty()) {
+        }
+        
+        // Si pas trouvé, chercher par numéro de passeport
+        if (demandeOpt.isEmpty() && numPasseport != null && !numPasseport.trim().isEmpty()) {
             demandeOpt = demandeService.findByPasseportNumero(numPasseport.trim());
         }
 
@@ -65,9 +70,12 @@ public class DemandeRestController {
         Map<String, Object> response = new HashMap<>();
         response.put("idDemande", demande.getIdDemande());
         response.put("numeroDemande", demande.getReferenceDemande());
+        response.put("numeroRecherche", numDemande != null && !numDemande.trim().isEmpty() ? numDemande.trim() : numPasseport.trim());
+        response.put("typeRecherche", numDemande != null && !numDemande.trim().isEmpty() ? "Demande" : "Passeport");
         response.put("nomDemandeur", demande.getDemandeur().getNom() + " " + (demande.getDemandeur().getPrenom() != null ? demande.getDemandeur().getPrenom() : ""));
         response.put("dateCreation", demande.getDateDemande());
         response.put("statusHistory", statusHistory);
+        // response.put("cheminQr", demande.getCheminQr());
 
         return ResponseEntity.ok(response);
     }

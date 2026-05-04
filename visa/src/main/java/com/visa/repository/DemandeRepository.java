@@ -13,6 +13,6 @@ public interface DemandeRepository extends JpaRepository<Demande, Integer> {
 
     Optional<Demande> findByReferenceDemande(String referenceDemande);
 
-    @Query("SELECT d FROM Demande d JOIN d.demandeur dem JOIN dem.passeports p WHERE p.numero = :numero")
+    @Query("SELECT d FROM Demande d WHERE d.demandeur.idDemandeur IN (SELECT p.demandeur.idDemandeur FROM Passeport p WHERE p.numero = :numero)")
     Optional<Demande> findByPasseportNumero(@Param("numero") String numero);
 }
