@@ -48,7 +48,6 @@ public class DemandeRestController {
         this.demandeStatutService = demandeStatutService;
         this.demandeService = demandeService;
     }
-}
 
     @GetMapping("/history")
     public ResponseEntity<?> getHistory(@RequestParam(required = false) String numDemande,
@@ -84,7 +83,7 @@ public class DemandeRestController {
                 statusMap.put("date", statut.getDateStatut());
                 statusMap.put("statutLibelle", statut.getStatutDemande().getLibelle());
                 // Assuming commentaire is added later, for now put null or empty
-                statusMap.put("commentaire", null);
+                statusMap.put("commentaire", null); 
                 return statusMap;
             })
             .collect(Collectors.toList());
@@ -101,46 +100,46 @@ public class DemandeRestController {
 
         return ResponseEntity.ok(response);
     }
-}
-    public ResponseEntity<?> history(
-            @RequestParam(required = false) String numDemande,
-            @RequestParam(required = false) String numPasseport
-    ) {
-        if ((numDemande == null || numDemande.isBlank()) && (numPasseport == null || numPasseport.isBlank())) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(new ErrorResponse("Au moins un paramètre est obligatoire: numDemande ou numPasseport"));
-        }
+// }
+    // public ResponseEntity<?> history(
+    //         @RequestParam(required = false) String numDemande,
+    //         @RequestParam(required = false) String numPasseport
+    // ) {
+    //     if ((numDemande == null || numDemande.isBlank()) && (numPasseport == null || numPasseport.isBlank())) {
+    //         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+    //                 .body(new ErrorResponse("Au moins un paramètre est obligatoire: numDemande ou numPasseport"));
+    //     }
 
-        Optional<Demande> demandeOpt = resolveDemande(numDemande, numPasseport);
-        if (demandeOpt.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(new ErrorResponse("Demande introuvable"));
-        }
+    //     Optional<Demande> demandeOpt = resolveDemande(numDemande, numPasseport);
+    //     if (demandeOpt.isEmpty()) {
+    //         return ResponseEntity.status(HttpStatus.NOT_FOUND)
+    //                 .body(new ErrorResponse("Demande introuvable"));
+    //     }
 
-        Demande demande = demandeOpt.get();
+    //     Demande demande = demandeOpt.get();
 
-        List<DemandeStatut> statuts = demandeStatutService.findByDemande(demande).stream()
-                .sorted(Comparator
-                        .comparing(DemandeStatut::getDateStatut, Comparator.nullsLast(Date::compareTo))
-                        .thenComparing(DemandeStatut::getIdDemandeStatut, Comparator.nullsLast(Integer::compareTo)))
-                .toList();
+    //     List<DemandeStatut> statuts = demandeStatutService.findByDemande(demande).stream()
+    //             .sorted(Comparator
+    //                     .comparing(DemandeStatut::getDateStatut, Comparator.nullsLast(Date::compareTo))
+    //                     .thenComparing(DemandeStatut::getIdDemandeStatut, Comparator.nullsLast(Integer::compareTo)))
+    //             .toList();
 
-        List<StatutEntry> timeline = statuts.stream().map(ds -> new StatutEntry(
-                ds.getDateStatut() != null ? ds.getDateStatut().toLocalDate().toString() : null,
-                ds.getStatutDemande() != null ? ds.getStatutDemande().getLibelle() : null,
-                null
-        )).toList();
+    //     List<StatutEntry> timeline = statuts.stream().map(ds -> new StatutEntry(
+    //             ds.getDateStatut() != null ? ds.getDateStatut().toLocalDate().toString() : null,
+    //             ds.getStatutDemande() != null ? ds.getStatutDemande().getLibelle() : null,
+    //             null
+    //     )).toList();
 
-        HistoryResponse response = new HistoryResponse(
-                demande.getIdDemande(),
-                demande.getReferenceDemande(),
-                demande.getDemandeur() != null ? (demande.getDemandeur().getNom() + " " + demande.getDemandeur().getPrenom()) : null,
-                formatTimestamp(demande.getDateDemande()),
-                timeline
-        );
+    //     HistoryResponse response = new HistoryResponse(
+    //             demande.getIdDemande(),
+    //             demande.getReferenceDemande(),
+    //             demande.getDemandeur() != null ? (demande.getDemandeur().getNom() + " " + demande.getDemandeur().getPrenom()) : null,
+    //             formatTimestamp(demande.getDateDemande()),
+    //             timeline
+    //     );
 
-        return ResponseEntity.ok(response);
-    }
+    //     return ResponseEntity.ok(response);
+    // }
 
     private Optional<Demande> resolveDemande(String numDemande, String numPasseport) {
         if (numDemande != null && !numDemande.isBlank()) {
