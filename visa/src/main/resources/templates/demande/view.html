@@ -53,6 +53,14 @@
                     <dd th:text="${demande.demandeur.situationFamiliale.libelle}"></dd>
                 </dl>
 
+                <h2>QR Code</h2>
+                <div th:if="${demande.cheminQr == null}">QR code non généré.</div>
+                <div th:if="${demande.cheminQr != null}">
+                    <img th:src="@{'/' + ${demande.cheminQr}}"
+                         alt="QR Code"
+                         style="max-width:220px; height:auto; border:1px solid #ccc; border-radius:4px;" />
+                </div>
+
                 <h2>Passeport</h2>
                 <div th:if="${passeport == null}">Aucun passeport trouvé.</div>
                 <dl class="kv" th:if="${passeport != null}">

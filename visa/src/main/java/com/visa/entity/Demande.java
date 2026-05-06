@@ -19,6 +19,9 @@ public class Demande {
 
     private String referenceDemande;
 
+    @Column(name = "chemin_qr")
+    private String cheminQr;
+
     private Timestamp dateDemande;
 
     @ManyToOne
