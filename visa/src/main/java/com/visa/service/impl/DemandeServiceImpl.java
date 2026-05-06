@@ -14,7 +14,9 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.URLEncoder;
+import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -267,12 +269,92 @@ public class DemandeServiceImpl implements DemandeService {
         CarteResident carteResident = new CarteResident();
         carteResident.setDemande(savedDemande);
         carteResident.setPasseport(dernierePasseport);
-        carteResident.setDateDebut(dernierVisa.getDateDebut());
+        carteResident.setDateDebut(dernierVisa.getDateDebut()); 
         carteResident.setDateFin(dernierVisa.getDateFin());
         carteResident.setReference(dernierVisa.getReference());
         carteResidentRepository.save(carteResident);
 
         return savedDemande;
+    }
+
+    /**
+     * Récupère l'IP réseau réelle du serveur (exclut localhost et les interfaces loopback/docker)
+     */
+    private String getNetworkIp() throws Exception {
+        java.net.NetworkInterface[] interfaces = java.net.NetworkInterface.networkInterfaces()
+                .toArray(java.net.NetworkInterface[]::new);
+        
+        String fallbackIp = null;
+        
+        for (java.net.NetworkInterface networkInterface : interfaces) {
+            if (networkInterface.isLoopback() || !networkInterface.isUp()) {
+                continue; // Ignore loopback et interfaces inactives
+            }
+            
+            String interfaceName = networkInterface.getName();
+            
+            // Ignore les interfaces Docker et virtuelles
+            if (interfaceName.startsWith("docker") || 
+                interfaceName.startsWith("br-") || 
+                interfaceName.startsWith("veth") ||
+                interfaceName.startsWith("vitess-") ||
+                interfaceName.contains("docker")) {
+                continue;
+            }
+            
+            java.util.Enumeration<java.net.InetAddress> enumIpAddr = networkInterface.getInetAddresses();
+            while (enumIpAddr.hasMoreElements()) {
+                java.net.InetAddress inetAddress = enumIpAddr.nextElement();
+                
+                if (inetAddress instanceof java.net.Inet4Address) { // IPv4 seulement
+                    String ip = inetAddress.getHostAddress();
+                    if (fallbackIp == null) {
+                        fallbackIp = ip;
+                    }
+                    // Préfère les interfaces réelles (eth, en, wlan, etc.)
+                    if (interfaceName.matches("^(eth|en|wlan).*")) {
+                        return ip;
+                    }
+                }
+            }
+        }
+        
+        // Retourne le fallback si trouvé, sinon utilise la méthode standard
+        if (fallbackIp != null) {
+            return fallbackIp;
+        }
+        
+        return InetAddress.getLocalHost().getHostAddress();
+    }
+
+    /**
+     * Construit l'URL dynamique du frontend en utilisant l'IP actuelle du serveur sur le réseau
+     * Extrait le port depuis la configuration frontendExternalBaseUrl
+     */
+    private String getDynamicFrontendUrl() {
+        try {
+            // Récupère l'IP du réseau réelle
+            String serverIp = getNetworkIp();
+            
+            // Extrait le port depuis frontendExternalBaseUrl (ex: http://localhost:5173 -> 5173)
+            int port = 5173; // port par défaut
+            if (frontendExternalBaseUrl != null && frontendExternalBaseUrl.contains(":")) {
+                try {
+                    String[] parts = frontendExternalBaseUrl.split(":");
+                    if (parts.length > 0) {
+                        String portStr = parts[parts.length - 1].replaceAll("[^0-9]", "");
+                        port = Integer.parseInt(portStr);
+                    }
+                } catch (Exception e) {
+                    // Garde le port par défaut 5173
+                }
+            }
+            
+            return "http://" + serverIp + ":" + port;
+        } catch (Exception e) {
+            // En cas d'erreur, utilise la configuration par défaut
+            return frontendExternalBaseUrl;
+        }
     }
 
     @Override
@@ -295,7 +377,8 @@ public class DemandeServiceImpl implements DemandeService {
                 : String.valueOf(demande.getIdDemande());
 
         String encoded = URLEncoder.encode(numDemande, StandardCharsets.UTF_8);
-        String url = frontendExternalBaseUrl + "/scan?numDemande=" + encoded;
+        String dynamicBaseUrl = getDynamicFrontendUrl();
+        String url = dynamicBaseUrl + "/scan?numDemande=" + encoded;
 
         String filename = "qr_" + demande.getIdDemande() + "_" + UUID.randomUUID() + ".png";
         String relativePath = Paths.get(uploadBaseDir, uploadsQrSubdir, filename).toString().replace('\\', '/');

@@ -32,11 +32,11 @@ public class WebConfig implements WebMvcConfigurer {
                 .allowCredentials(false);
     }
 
-    @Override
-    public void addCorsMappings(CorsRegistry registry) {
-        registry.addMapping("/api/**")
-                .allowedOrigins("http://localhost:5173") // URL du front VueJS
-                .allowedMethods("GET", "POST", "PUT", "DELETE")
-                .allowedHeaders("*");
-    }
+    // @Override
+    // public void addCorsMappings(CorsRegistry registry) {
+    //     registry.addMapping("/api/**")
+    //             .allowedOrigins("http://localhost:5173") // URL du front VueJS
+    //             .allowedMethods("GET", "POST", "PUT", "DELETE")
+    //             .allowedHeaders("*");
+    // }
 }

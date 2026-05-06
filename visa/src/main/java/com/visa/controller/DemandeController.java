@@ -142,6 +142,11 @@ public class DemandeController {
         demande.setDemandeur(savedDemandeur);
 
         Demande savedDemande = demandeService.save(demande);
+        
+        demande.setReferenceDemande("DMD" + savedDemande.getIdDemande());
+
+        Demande savedDemandeRef = demandeService.save(demande);
+
 
         // Create VisaTransformable
         VisaTransformable visa = new VisaTransformable();
