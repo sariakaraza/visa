@@ -1,0 +1,199 @@
+TL : ETU003203 Finoana
+Dev Backoffice : ETU003126 Sandratra et ETUO03378 Sariaka
+
+Objectif du sprint 5
+--------------------
+Sur la page publique (front VueJS), permettre au demandeur :
+- de prendre une photo via webcam
+- de faire une signature à la souris
+- de visualiser une “fiche demandeur” récapitulant : infos demandeur + photo + signature
+
+Côté backend :
+- persister la photo + la signature (chemins des fichiers) et les servir
+- ajouter un statut `Photo et signature terminé`
+- faire évoluer le workflow des statuts : `Photo et signature terminé` puis `Scan terminé`
+
+Hypothèses / périmètre (à valider)
+---------------------------------
+- La fiche est accessible publiquement via une URL du front (ex : `/fiche?numDemande=...` ou `/scan?numDemande=...`).
+- La photo et la signature sont associées à une DEMANDE (pas juste au demandeur), car un demandeur peut faire plusieurs demandes.
+- Stockage fichiers comme Sprint 3/4 (dossier `uploads/...`), avec persistance du chemin relatif en DB.
+
+
+-- Sandratra (Backend / Java + Back-office)
+
+* SQL / DB :
+
+	* Ajouter les colonnes (exemple) :
+		- dans `demande` :
+			- `chemin_photo` VARCHAR(255) — chemin relatif image photo
+			- `chemin_signature` VARCHAR(255) — chemin relatif image signature
+
+		Exemple SQL :
+			ALTER TABLE demande ADD COLUMN chemin_photo VARCHAR(255);
+			ALTER TABLE demande ADD COLUMN chemin_signature VARCHAR(255);
+
+	* Ajouter le nouveau statut :
+		- `statut_demande.libelle = 'Photo et signature terminé'`
+		Remarque : ne pas dépendre d’un id fixe si possible (mais aligner avec vos seeds si vous avez une convention).
+
+* Entités :
+
+	* Modifier l’entité `Demande` :
+		- ajouter :
+			- `private String cheminPhoto;` -> `@Column(name = "chemin_photo")`
+			- `private String cheminSignature;` -> `@Column(name = "chemin_signature")`
+
+* Stockage fichiers :
+
+	* Créer les dossiers de stockage (même logique que `uploads/pieces`) :
+		- `uploads/photo/`
+		- `uploads/signature/`
+	* Règles :
+		- accepter PNG/JPG côté photo
+		- signature : PNG (issu de canvas)
+		- nommage conseillé :
+			- `photo_{idDemande}_{uuid}.png`
+			- `signature_{idDemande}_{uuid}.png`
+
+* API publique (REST) :
+
+	* Ajouter endpoint pour déposer photo + signature (public) :
+		- POST `/api/demandes/photo-signature`
+			- query : `numDemande=...` OU `numPasseport=...` (au choix mais cohérent avec Sprint 4)
+			- body : `multipart/form-data`
+				- `photo` : fichier image
+				- `signature` : fichier image
+			- réponse JSON :
+				- infos demande (id, numeroDemande, demandeur)
+				- `cheminPhoto`, `cheminSignature`
+				- dernier statut (libellé/date)
+	* Validation :
+		- refuser si photo OU signature manquante
+		- limiter taille (ex : 2–5 MB) et types MIME
+		- erreurs : 400 (input), 404 (demande introuvable), 500 (stockage)
+
+* Mise à jour statut :
+
+	* Après sauvegarde réussie des 2 fichiers :
+		- insérer un `DemandeStatut` avec `StatutDemande='Photo et signature terminé'`
+	* Important :
+		- ne pas passer à `Scan terminé` ici
+		- `Scan terminé` reste piloté par l’upload complet des pièces justificatives (Sprint 3)
+
+* API history (Sprint 4) :
+
+	* S’assurer que l’endpoint `GET /api/demandes/history?...` renvoie bien :
+		- la timeline incluant le statut `Photo et signature terminé`
+		- ET les champs utiles à la fiche :
+			- infos demandeur minimales
+			- `cheminPhoto` / `cheminSignature` (si présents)
+
+* Back-office :
+
+	* Sur la page de visualisation demande (`templates/demande/view.html`) :
+		- afficher :
+			- photo (si `chemin_photo` non null)
+			- signature (si `chemin_signature` non null)
+		- afficher un libellé si absent (ex : “Non fourni”).
+
+* CORS / sécurité :
+
+	* Autoriser le front Vue (`frontend.externalBaseUrl`) sur :
+		- GET `/api/demandes/history`
+		- POST `/api/demandes/photo-signature`
+	* Limiter les informations retournées (pas de données sensibles).
+
+* Configuration :
+
+	* Ajouter dans `application.properties` (exemple) :
+		- `uploads.photo.folder=uploads/photo`
+		- `uploads.signature.folder=uploads/signature`
+		- (si besoin) `spring.servlet.multipart.max-file-size=5MB` / `max-request-size=10MB`
+
+
+-- Sariaka (Frontend VueJS)
+
+
+* Pages / composants :
+
+	* Créer/adapter la page publique :
+		- soit une nouvelle page `src/views/FichePage.vue`
+		- soit extension de `ScanPage.vue` (Sprint 4)
+	* Composants recommandés :
+		- `src/components/WebcamCapture.vue`
+			- start/stop webcam
+			- capture vers canvas
+			- preview + bouton “Reprendre”
+		- `src/components/SignaturePad.vue`
+			- canvas signature souris
+			- boutons “Effacer” / “Valider”
+		- `src/components/DemandeurCard.vue`
+			- affiche infos demandeur
+
+* Parcours utilisateur :
+
+	1) Le demandeur arrive via QR avec `?numDemande=...` (ou `?numPasseport=...`).
+	2) La page appelle `GET /api/demandes/history?...` pour afficher :
+		 - infos demande
+		 - infos demandeur
+		 - timeline
+	3) Le demandeur capture la photo (webcam).
+	4) Le demandeur fait la signature (canvas).
+	5) Il clique “Enregistrer” => POST `multipart/form-data` vers `/api/demandes/photo-signature?...`.
+	6) Après succès :
+		 - afficher la photo et la signature sauvegardées
+		 - rafraîchir la timeline (doit inclure `Photo et signature terminé`).
+
+* Détails techniques (webcam + signature) :
+
+	* Webcam :
+		- utiliser `navigator.mediaDevices.getUserMedia({ video: true })`
+		- capturer un frame dans un canvas puis convertir en Blob (`canvas.toBlob`)
+		- gérer erreurs permissions (message clair)
+	* Signature :
+		- canvas + écoute `mousedown/mousemove/mouseup`
+		- (optionnel) support tactile `touchstart/touchmove/touchend`
+		- exporter PNG en Blob
+
+* Appels API :
+
+	* `VITE_API_BASE_URL` dans `.env` :
+		- `VITE_API_BASE_URL=http://localhost:8080`
+	* GET history :
+		- `${VITE_API_BASE_URL}/api/demandes/history?numDemande=...` (ou numPasseport)
+	* POST photo+signature :
+		- `${VITE_API_BASE_URL}/api/demandes/photo-signature?numDemande=...` (ou numPasseport)
+		- body : `FormData()` avec `photo` + `signature`
+
+* UI / UX :
+
+	* Afficher :
+		- infos demandeur (nom, prénom, date naissance, nationalité, situation familiale)
+		- photo preview + signature preview
+		- états : chargement / erreur / succès
+	* Validation :
+		- désactiver “Enregistrer” tant que photo + signature non prêtes
+
+
+Points d’attention / remarques
+------------------------------
+
+- Attention au format date côté API (Java Date sans heure). Trier la timeline par date + id si nécessaire.
+- Ne pas exposer d’infos sensibles dans l’API publique.
+- Prévoir une taille d’image raisonnable (compression côté front si besoin).
+- Le statut `Photo et signature terminé` ne doit pas casser la logique `Scan terminé` existante (Sprint 3).
+
+
+Critères d’acceptation
+----------------------
+
+- Sur la page publique, le demandeur peut :
+	- prendre une photo webcam
+	- faire une signature à la souris
+	- enregistrer les deux côté backend
+- Après enregistrement :
+	- la fiche affiche infos demandeur + photo + signature
+	- la timeline contient le statut `Photo et signature terminé`
+- Le statut `Scan terminé` reste déclenché uniquement quand toutes les pièces justificatives requises sont uploadées.
+
