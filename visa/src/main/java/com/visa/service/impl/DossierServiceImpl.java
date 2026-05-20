@@ -40,4 +40,8 @@ public class DossierServiceImpl implements DossierService {
     public List<Dossier> findByTypeVisa(TypeVisa typeVisa) {
         return dossierRepository.findByTypeVisa(typeVisa);
     }
+    @Override
+    public Optional<Dossier> findPhotoDossier(TypeVisa typeVisa) {
+        return dossierRepository.findByLibelleAndTypeVisa("Photo d’identité (Webcam)", typeVisa);
+    }
 }

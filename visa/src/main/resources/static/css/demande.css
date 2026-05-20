@@ -208,3 +208,8 @@ button:hover,
 .recap-section p {
   margin: 10px 0;
 }
+
+.action-btn {
+  margin-top: 24px;   /* Donne de l'air par rapport au tableau */
+  font-weight: bold;  /* Optionnel : rend le texte un peu plus visible */
+}

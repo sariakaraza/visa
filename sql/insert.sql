@@ -71,3 +71,15 @@ INSERT INTO dossier (libelle, id_type_visa) VALUES
 INSERT INTO dossier (libelle, id_type_visa) VALUES
 ('Autorisation emploi délivrée à Madagascar par le Ministère de la Fonction publique', 2),
 ('Attestation d’emploi délivrée par l’employeur (Original)', 2);
+
+-- =============================================
+-- Ajout de la pièce "Photo" pour chaque type de visa
+-- =============================================
+
+-- Pour le visa Investisseur (id_type_visa = 1)
+INSERT INTO dossier (libelle, id_type_visa) VALUES 
+('Photo d’identité (Webcam)', 1);
+
+-- Pour le visa Travailleur (id_type_visa = 2)
+INSERT INTO dossier (libelle, id_type_visa) VALUES 
+('Photo d’identité (Webcam)', 2);

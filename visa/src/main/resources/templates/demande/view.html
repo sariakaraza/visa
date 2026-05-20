@@ -21,6 +21,16 @@
             <div class="container">
                 <h1>Détail de la Demande</h1>
 
+                <div class="profile-photo-container" style="margin-bottom: 24px;">
+                    <div th:if="${photoProfil == null}" style="color: var(--color-muted); font-style: italic;">
+                        Pas de photo de profil enregistrée.
+                    </div>
+                    <div th:if="${photoProfil != null}">
+                        <img th:src="@{'/' + ${photoProfil.cheminFichier}}" 
+                            alt="Photo Demandeur" 
+                            style="width: 150px; height: 150px; object-fit: cover; border-radius: 50%; border: 3px solid var(--color-primary); box-shadow: 0 4px 6px rgba(0,0,0,0.1);" />
+                    </div>
+                </div>
                 <dl class="kv">
                     <dt>ID</dt>
                     <dd th:text="${demande.idDemande}"></dd>
@@ -116,6 +126,8 @@
                     </tbody>
                 </table>
             </div>
+
+            <a th:href="@{/photo/capture/{id}(id=${demande.idDemande})}" class="btn action-btn">Ajouter une photo</a>
         </main>
     </div>
 </body>
