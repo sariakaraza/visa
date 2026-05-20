@@ -473,7 +473,7 @@ public class DemandeServiceImpl implements DemandeService {
             return;
         }
 
-        StatutDemande scanTermine = statutDemandeRepository.findById(4)
+        StatutDemande scanTermine = statutDemandeRepository.findById(5)
             .orElseThrow(() -> new RuntimeException(
                 "StatutDemande id=4 ('Scan terminé') introuvable. Exécuter sql/insert.sql ou corriger la table statut_demande."
             ));
