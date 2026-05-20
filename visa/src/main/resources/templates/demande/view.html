@@ -131,6 +131,10 @@
             <a th:if="${photoProfil == null}" 
             th:href="@{/photo/capture/{id}(id=${demande.idDemande})}" 
             class="btn action-btn">Ajouter une photo</a>
+
+            <a th:if="${signature == null}" 
+            th:href="@{/signature/draw/{id}(id=${demande.idDemande})}" 
+            class="btn action-btn">Ajouter une signature</a>
         </main>
     </div>
 </body>

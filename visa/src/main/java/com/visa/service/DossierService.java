@@ -13,4 +13,5 @@ public interface DossierService {
     void delete(Integer id);
     List<Dossier> findByTypeVisa(TypeVisa typeVisa);
     Optional<Dossier> findPhotoDossier(TypeVisa typeVisa);
+    Optional<Dossier> findSignatureDossier(TypeVisa typeVisa);
 }

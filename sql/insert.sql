@@ -83,3 +83,10 @@ INSERT INTO dossier (libelle, id_type_visa) VALUES
 -- Pour le visa Travailleur (id_type_visa = 2)
 INSERT INTO dossier (libelle, id_type_visa) VALUES 
 ('Photo d’identité (Webcam)', 2);
+
+INSERT INTO dossier (libelle, id_type_visa) VALUES 
+('Signature', 1);
+
+-- Pour le visa Travailleur (id_type_visa = 2)
+INSERT INTO dossier (libelle, id_type_visa) VALUES 
+('Signature', 2);
