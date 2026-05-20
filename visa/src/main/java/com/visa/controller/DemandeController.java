@@ -571,6 +571,19 @@ public class DemandeController {
                 .filter(p -> p.getDemandeur().getIdDemandeur().equals(demande.getDemandeur().getIdDemandeur()))
                 .toList();
 
+        // --- AJOUT : Extraire la photo webcam pour le profil ---
+        PieceJustificative photoProfil = pieces.stream()
+                .filter(p -> "Photo d’identité (Webcam)".equals(p.getDossier().getLibelle()))
+                .findFirst()
+                .orElse(null);
+        // -------------------------------------------------------
+
+        // extraire sonia
+        PieceJustificative signature = pieces.stream()
+        .filter(p -> "Signature".equals(p.getDossier().getLibelle()))
+        .findFirst()
+        .orElse(null);
+
         Passeport passeport = passeportService.findAll().stream()
                 .filter(p -> p.getDemandeur().getIdDemandeur().equals(demande.getDemandeur().getIdDemandeur()))
                 .findFirst()
@@ -590,6 +603,8 @@ public class DemandeController {
 
         model.addAttribute("demande", demande);
         model.addAttribute("pieces", pieces);
+        model.addAttribute("photoProfil", photoProfil); // Envoyé à Thymeleaf
+        model.addAttribute("signature", signature);
         model.addAttribute("passeport", passeport);
         model.addAttribute("visaTransformable", visaTransformable);
         model.addAttribute("lieu", lieu);

@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Capture Signature</title>
+    <link rel="stylesheet" th:href="@{/css/demande.css}">
+    <style>
+        .signature-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        canvas {
+            border: 2px dashed #666;
+            border-radius: 8px;
+            background-color: #fff;
+            cursor: crosshair;
+            touch-action: none; /* Empêche le défilement de l'écran pendant le dessin tactile */
+        }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <main class="content">
+            <div class="container">
+                <h1>Signature Numérique</h1>
+                <p>Veuillez signer à l'aide de votre souris, trackpad ou écran tactile dans le cadre ci-dessous.</p>
+
+                <div class="signature-container">
+                    <!-- Zone de dessin -->
+                    <canvas id="signaturePad" width="500" height="200"></canvas>
+
+                    <div class="actions">
+                        <button id="saveBtn" class="btn">Enregistrer la signature</button>
+                        <button id="clearBtn" class="btn btn-secondary">Effacer</button>
+                        <a th:href="@{/demande/{id}(id=${idDemande})}" class="btn btn-secondary">Annuler</a>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script th:inline="javascript">
+        const idDemande = [[${idDemande}]];
+        const canvas = document.getElementById('signaturePad');
+        const ctx = canvas.getContext('2d');
+        const clearBtn = document.getElementById('clearBtn');
+        const saveBtn = document.getElementById('saveBtn');
+
+        let isDrawing = false;
+        let lastX = 0;
+        let lastY = 0;
+
+        // Configuration du tracé
+        ctx.strokeStyle = '#000000'; // Couleur de l'encre (Noire)
+        ctx.lineWidth = 3;           // Épaisseur de la ligne
+        ctx.lineJoin = 'round';
+        ctx.lineCap = 'round';
+
+        // Fonctions de dessin
+        function startDrawing(e) {
+            isDrawing = true;
+            const coords = getCoordinates(e);
+            [lastX, lastY] = [coords.x, coords.y];
+        }
+
+        function draw(e) {
+            if (!isDrawing) return;
+            const coords = getCoordinates(e);
+            ctx.beginPath();
+            ctx.moveTo(lastX, lastY);
+            ctx.lineTo(coords.x, coords.y);
+            ctx.stroke();
+            [lastX, lastY] = [coords.x, coords.y];
+        }
+
+        function stopDrawing() {
+            isDrawing = false;
+        }
+
+        // Calculer la position exacte du curseur/doigt par rapport au canvas
+        function getCoordinates(e) {
+            const rect = canvas.getBoundingClientRect();
+            // Gestion du tactile vs souris
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            return {
+                x: clientX - rect.left,
+                y: clientY - rect.top
+            };
+        }
+
+        // Événements Souris
+        canvas.addEventListener('mousedown', startDrawing);
+        canvas.addEventListener('mousemove', draw);
+        canvas.addEventListener('mouseup', stopDrawing);
+        canvas.addEventListener('mouseout', stopDrawing);
+
+        // Événements Écran Tactile
+        canvas.addEventListener('touchstart', (e) => { startDrawing(e); e.preventDefault(); });
+        canvas.addEventListener('touchmove', (e) => { draw(e); e.preventDefault(); });
+        canvas.addEventListener('touchend', stopDrawing);
+
+        // Bouton : Effacer
+        clearBtn.addEventListener('click', () => {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        });
+
+        // Bouton : Sauvegarder et Envoyer
+        saveBtn.addEventListener('click', () => {
+            // Vérification basique si le canvas est vide (optionnel)
+            const imageDataUrl = canvas.toDataURL('image/png');
+
+            saveBtn.disabled = true;
+            saveBtn.innerText = "Enregistrement...";
+
+            fetch(`/signature/upload/${idDemande}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ image: imageDataUrl })
+            })
+            .then(response => response.text())
+            .then(data => {
+                if (data === "OK") {
+                    alert("Signature enregistrée !");
+                    window.location.href = `/demande/${idDemande}`; // Retour aux détails
+                } else {
+                    alert(data);
+                    saveBtn.disabled = false;
+                    saveBtn.innerText = "Enregistrer la signature";
+                }
+            })
+            .catch(error => {
+                console.error('Erreur:', error);
+                alert("Erreur serveur lors de l'envoi.");
+                saveBtn.disabled = false;
+            });
+        });
+    </script>
+</body>
+</html>

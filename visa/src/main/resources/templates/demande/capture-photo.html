@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Capture Photo Webcam</title>
+    <link rel="stylesheet" th:href="@{/css/demande.css}">
+    <style>
+        .webcam-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        video, canvas {
+            border: 2px solid var(--color-border);
+            border-radius: 8px;
+            background: #000;
+        }
+        #canvas { display: none; } /* Caché, il sert juste à capturer l'image */
+    </style>
+</head>
+<body>
+    <div class="app">
+        <main class="content">
+            <div class="container">
+                <h1>Prise de vue biométrique</h1>
+                <p>Veuillez vous placer face à la caméra et cliquer sur "Prendre la photo".</p>
+
+                <div class="webcam-container">
+                    <!-- Flux vidéo de la webcam -->
+                    <video id="video" width="400" height="300" autoplay playsinline></video>
+                    
+                    <!-- Zone de rendu cachée pour la conversion de l'image -->
+                    <canvas id="canvas" width="400" height="300"></canvas>
+
+                    <div class="actions">
+                        <button id="snap" class="btn">Prendre la photo</button>
+                        <a th:href="@{/demande/list}" class="btn btn-secondary">Annuler</a>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script th:inline="javascript">
+        // Récupération de l'ID de la demande depuis Thymeleaf
+        const idDemande = [[${idDemande}]];
+        
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const snap = document.getElementById('snap');
+        const context = canvas.getContext('2d');
+
+        // Étape 1 : Accéder à la webcam de l'utilisateur
+        navigator.mediaDevices.getUserMedia({ video: true, audio: false })
+            .then((stream) => {
+                video.srcObject = stream;
+            })
+            .catch((err) => {
+                alert("Impossible d'accéder à la webcam : " + err);
+            });
+
+        // Étape 2 : Prendre le cliché au clic
+        snap.addEventListener('click', () => {
+            // Dessine l'image de la vidéo sur le canvas
+            context.drawImage(video, 0, 0, 400, 300);
+            
+            // Convertit le canvas en chaîne de caractères Base64 (Format JPEG)
+            const imageDataUrl = canvas.toDataURL('image/jpeg');
+
+            // Désactive le bouton pour éviter les doubles clics
+            snap.disabled = true;
+            snap.innerText = "Envoi en cours...";
+
+            // Étape 3 : Envoyer la photo à Spring Boot via un appel POST asynchrone
+            fetch(`/photo/upload/${idDemande}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ image: imageDataUrl })
+            })
+            .then(response => response.text())
+            .then(data => {
+                if (data === "OK") {
+                    alert("Photo enregistrée avec succès !");
+                    // Arrête la webcam pour éteindre le voyant lumineux de l'appareil
+                    const tracks = video.srcObject.getTracks();
+                    tracks.forEach(track => track.stop());
+                    
+                    // Redirection vers le profil ou la page précédente
+                    window.location.href = "/demande/list"; 
+                } else {
+                    alert(data);
+                    snap.disabled = false;
+                    snap.innerText = "Prendre la photo";
+                }
+            })
+            .catch(error => {
+                console.error('Erreur:', error);
+                alert("Erreur lors de la communication avec le serveur.");
+                snap.disabled = false;
+                snap.innerText = "Prendre la photo";
+            });
+        });
+    </script>
+</body>
+</html>
