@@ -20,6 +20,7 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 
 @Controller
@@ -38,8 +39,9 @@ public class DemandeController {
     private final DossierService dossierService;
     private final PieceJustificativeService pieceJustificativeService;
     private final DemandeStatutService demandeStatutService;
+    private final StatutDemandeService statutDemandeService;
 
-    public DemandeController(DemandeService demandeService, DemandeurService demandeurService, PasseportService passeportService, VisaTransformableService visaTransformableService, LieuService lieuService, TypeDemandeService typeDemandeService, TypeVisaService typeVisaService, NationaliteService nationaliteService, SituationFamilialeService situationFamilialeService, DossierService dossierService, PieceJustificativeService pieceJustificativeService, DemandeStatutService demandeStatutService) {
+    public DemandeController(DemandeService demandeService, DemandeurService demandeurService, PasseportService passeportService, VisaTransformableService visaTransformableService, LieuService lieuService, TypeDemandeService typeDemandeService, TypeVisaService typeVisaService, NationaliteService nationaliteService, SituationFamilialeService situationFamilialeService, DossierService dossierService, PieceJustificativeService pieceJustificativeService, DemandeStatutService demandeStatutService, StatutDemandeService statutDemandeService) {
         this.demandeService = demandeService;
         this.demandeurService = demandeurService;
         this.passeportService = passeportService;
@@ -52,6 +54,7 @@ public class DemandeController {
         this.dossierService = dossierService;
         this.pieceJustificativeService = pieceJustificativeService;
         this.demandeStatutService = demandeStatutService;
+        this.statutDemandeService = statutDemandeService;
     }
 
     @GetMapping("/new")
@@ -583,6 +586,24 @@ public class DemandeController {
         .filter(p -> "Signature".equals(p.getDossier().getLibelle()))
         .findFirst()
         .orElse(null);
+
+        if (photoProfil != null && signature != null) {
+            Optional<DemandeStatut> demandeStatut = demandeService.findByReferenceDemande(demande.getReferenceDemande())
+                .flatMap(d -> demandeStatutService.findByDemande(d).stream()
+                    .filter(ds -> "Photos et signatures terminées".equals(ds.getStatutDemande().getLibelle()))
+                    .findFirst());
+
+            if (!photoProfil.equals(null) && !signature.equals(null) && demandeStatut.isEmpty()) {
+                StatutDemande statutDemande = statutDemandeService.findByLibelle("Photos et signatures terminées");
+
+                DemandeStatut ds = new DemandeStatut();
+                ds.setDemande(demande);
+                ds.setDateStatut(Date.valueOf(LocalDate.now()));
+                ds.setStatutDemande(statutDemande);
+                
+                demandeStatutService.save(ds);
+            }
+        }
 
         Passeport passeport = passeportService.findAll().stream()
                 .filter(p -> p.getDemandeur().getIdDemandeur().equals(demande.getDemandeur().getIdDemandeur()))

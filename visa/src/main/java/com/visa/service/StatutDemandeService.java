@@ -9,4 +9,5 @@ public interface StatutDemandeService {
     Optional<StatutDemande> findById(Integer id);
     StatutDemande save(StatutDemande statutDemande);
     void deleteById(Integer id);
+    StatutDemande findByLibelle(String libelle);
 }

@@ -40,10 +40,11 @@ INSERT INTO statut_demande (id_statut_demande, libelle) VALUES
 (1, 'Demande créée'),
 (2, 'Dossier en cours de traitement'),
 (3, 'Pièces complémentaires demandées'),
-(4, 'Scan terminé'),
-(5, 'Visa approuvé'),
-(6, 'Visa refusé'),
-(7, 'Demande annulée')
+(4, 'Photos et signatures terminées'),
+(5, 'Scan terminé'),
+(6, 'Visa approuvé'),
+(7, 'Visa refusé'),
+(8, 'Demande annulée')
 ON CONFLICT (id_statut_demande) DO UPDATE
 SET libelle = EXCLUDED.libelle;
 
