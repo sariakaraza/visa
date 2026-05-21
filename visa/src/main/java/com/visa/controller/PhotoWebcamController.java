@@ -84,6 +84,14 @@ public class PhotoWebcamController {
 
             pieceService.save(piece); // Sauvegarde en BDD
 
+            // Après sauvegarde, vérifier si tous les dossiers requis sont présents
+            try {
+                demandeService.processUploadsForDemande(idDemande, null, java.util.List.of(dossierPhoto.getIdDossier()));
+            } catch (Exception e) {
+                // Ne pas empêcher le succès en cas d'erreur secondaire
+                e.printStackTrace();
+            }
+
             return "OK";
         } catch (IOException e) {
             e.printStackTrace();

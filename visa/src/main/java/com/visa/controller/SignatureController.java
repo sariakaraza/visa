@@ -80,6 +80,13 @@ public class SignatureController {
 
             pieceService.save(piece);
 
+            // Après sauvegarde, vérifier si tous les dossiers requis sont présents
+            try {
+                demandeService.processUploadsForDemande(idDemande, null, java.util.List.of(dossierSignature.getIdDossier()));
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
             return "OK";
         } catch (IOException e) {
             e.printStackTrace();

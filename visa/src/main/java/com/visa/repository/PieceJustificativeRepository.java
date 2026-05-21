@@ -9,4 +9,5 @@ import java.util.List;
 @Repository
 public interface PieceJustificativeRepository extends JpaRepository<PieceJustificative, Integer> {
 	List<PieceJustificative> findByDemandeur_IdDemandeurAndDossier_IdDossier(Integer idDemandeur, Integer idDossier);
+	List<PieceJustificative> findByDemandeur_IdDemandeurOrderByDateAjoutAsc(Integer idDemandeur);
 }

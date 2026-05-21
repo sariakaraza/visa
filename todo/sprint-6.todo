@@ -1,0 +1,19 @@
+Taches SPRINT 6 : 
+TL : Sariaka
+
+SANDRATRA
+- Dans /demande/{id} (details d'une demande) : 
+	- ajouter un bouton "Voir apercu" tout en bas :
+		-on peut effacer le tableau dossiers/pieces justificatives et remplacer directement par le bouton Voit apercu / ou on ajoute juste le bouton sans rien effacer de notre affichage , et cette action enclachera :
+		- un apercu (sous forme de pdf non telechargeable) complet de toutes les pieces justificatives (comme le tableau qu'on avait deja) 
+			-nom du dossier + fichier (bien visible)
+		- order by date_ajout des pieces justificatives
+FINOANA		
+- Dans /demande/{id} (details d'une demande), verifier si le statut = Scan terminé :
+	- ajouter un bouton EXPORTER PDF :
+		- creer un accusé de recéption = lettre au format PDF telechargeable qui dit :
+				-tous les dossiers sont recus
+				-mettre les infos du demandeur (nom, prenom, etc..)
+				-ajouter le qr code de la demande
+				-ajouter photo du demandeur
+
