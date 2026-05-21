@@ -56,6 +56,13 @@ public class PdfReceiptServiceImpl implements PdfReceiptService {
         document.add(titleTable);
         document.add(new Paragraph(" "));
 
+        // Petit paragraphe professionnel confirmant la bonne réception des dossiers
+        Paragraph confirmation = new Paragraph("Nous accusons réception de l'ensemble des dossiers et pièces justificatives fournis. "
+            + "Les documents ont été enregistrés et seront traités conformément aux procédures en vigueur.", normalFont);
+        confirmation.setAlignment(Element.ALIGN_JUSTIFIED);
+        confirmation.setSpacingAfter(8f);
+        document.add(confirmation);
+
         List<PieceJustificative> pieces = demande.getDemandeur() != null
                 ? pieceRepo.findByDemandeur_IdDemandeurOrderByDateAjoutAsc(demande.getDemandeur().getIdDemandeur())
                 : List.of();
