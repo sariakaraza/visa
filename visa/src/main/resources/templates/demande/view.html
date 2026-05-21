@@ -4,6 +4,176 @@
     <meta charset="UTF-8">
     <title>Détail Demande</title>
     <link rel="stylesheet" th:href="@{/css/demande.css}">
+    <style>
+        /* Modal Styles */
+        .pdf-modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        .pdf-modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .pdf-modal-content {
+            background-color: white;
+            width: 90%;
+            max-width: 900px;
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .pdf-viewer-container {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+        }
+
+        .pdf-viewer-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #f5f5f5;
+            padding: 15px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .pdf-info {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            font-size: 14px;
+        }
+
+        .page-counter {
+            font-weight: bold;
+            color: var(--color-primary);
+        }
+
+        .piece-title {
+            color: #666;
+            font-style: italic;
+        }
+
+        .pdf-controls {
+            display: flex;
+            gap: 10px;
+        }
+
+        .pdf-close-btn {
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.2s;
+        }
+
+        .pdf-close-btn:hover {
+            background-color: #c82333;
+        }
+
+        .pdf-btn {
+            padding: 8px 15px;
+            background-color: var(--color-primary);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.2s;
+        }
+
+        .pdf-btn:hover:not(:disabled) {
+            background-color: #0056b3;
+        }
+
+        .pdf-btn:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+
+        .pdf-viewer {
+            display: flex;
+            justify-content: center;
+            background-color: #e8e8e8;
+            padding: 20px;
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .pdf-pages {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+        }
+
+        .pdf-page {
+            display: block;
+            background-color: white;
+            padding: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+            border-radius: 4px;
+        }
+
+
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        .pdf-image {
+            width: 100%;
+            height: auto;
+            max-height: 600px;
+            object-fit: contain;
+            display: block;
+            margin: 0 auto;
+            border-radius: 2px;
+        }
+
+        .pdf-empty {
+            width: 100%;
+            height: 400px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #999;
+            background-color: #f9f9f9;
+            border: 2px dashed #ddd;
+            border-radius: 4px;
+        }
+
+        .pdf-page-footer {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-top: 1px solid #eee;
+            margin-top: 10px;
+            font-size: 12px;
+            color: #666;
+        }
+    </style>
 </head>
 <body>
     <div class="app">
@@ -100,32 +270,43 @@
                     <dd th:text="${lieu != null ? lieu.libelle : ''}"></dd>
                 </dl>
 
-                <h2>Dossiers / pièces justificatives</h2>
+                <h2>Dièces justificatives</h2>
                 <div th:if="${pieces == null || #lists.isEmpty(pieces)}">Aucune pièce justificative.</div>
-                <table class="table" th:if="${pieces != null && !#lists.isEmpty(pieces)}">
-                    <thead>
-                        <tr>
-                            <th>Dossier</th>
-                            <th>Aperçu</th>
-                            <th>Date ajout</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr th:each="p : ${pieces}">
-                            <td th:text="${p.dossier.libelle}"></td>
-                            <td>
-                                <img th:if="${p.cheminFichier != null}" 
-                                    th:src="@{'/' + ${p.cheminFichier}}"
-                                    alt="Aperçu"
-                                    style="max-width:100px; height:auto; border:1px solid #ccc; border-radius:4px;" />
-                                    
-                                <span th:if="${p.cheminFichier == null}">-</span>
-                            </td>
-                            <td th:text="${#dates.format(p.dateAjout, 'dd/MM/yyyy HH:mm')}"></td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
+                <button class="btn action-btn" type="button" onclick="openPDFViewer()" th:disabled="${pieces == null || #lists.isEmpty(pieces)}">Voir les apercus</button>
+
+                <div class="pdf-modal" id="piecesModal" onclick="handleModalBackdrop(event)">
+                    <div class="pdf-modal-content" role="dialog" aria-modal="true" aria-label="Apercus des pieces">
+                        <div class="pdf-viewer-container">
+                            <div class="pdf-viewer-header">
+                                <div class="pdf-info">
+                                    <span class="page-counter">Apercus des pieces</span>
+                                </div>
+                                <div class="pdf-controls">
+                                    <button class="pdf-close-btn" type="button" onclick="closePDFViewer()">Fermer</button>
+                                </div>
+                            </div>
+                            <div class="pdf-viewer" style="overflow-y:auto; max-height:80vh;">
+                                <div class="pdf-pages">
+                                    <div th:each="p, stat : ${pieces}"
+                                        class="pdf-page"
+                                        th:attr="data-page=${stat.count}, data-dossier=${p.dossier.libelle}">
+                                        <img th:if="${p.cheminFichier != null}"
+                                            th:src="@{'/' + ${p.cheminFichier}}"
+                                            alt="Page"
+                                            class="pdf-image" />
+                                        <div th:if="${p.cheminFichier == null}" class="pdf-empty">
+                                            Pas d'image disponible
+                                        </div>
+                                        <div class="pdf-page-footer">
+                                            <small th:text="${p.dossier.libelle}"></small>
+                                            <small th:text="${#dates.format(p.dateAjout, 'dd/MM/yyyy')}"></small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
             <!-- <a th:href="@{/photo/capture/{id}(id=${demande.idDemande})}" class="btn action-btn">Ajouter une photo</a> -->
             <a th:if="${photoProfil == null}" 
@@ -139,5 +320,33 @@
             <a th:if="${showExport}" th:href="@{/demande/{id}/export-receipt(id=${demande.idDemande})}" class="btn action-btn">EXPORTER PDF</a>
         </main>
     </div>
+
+    <script>
+        function openPDFViewer() {
+            var modal = document.getElementById('piecesModal');
+            if (modal) {
+                modal.classList.add('active');
+            }
+        }
+
+        function closePDFViewer() {
+            var modal = document.getElementById('piecesModal');
+            if (modal) {
+                modal.classList.remove('active');
+            }
+        }
+
+        function handleModalBackdrop(event) {
+            if (event && event.target && event.target.id === 'piecesModal') {
+                closePDFViewer();
+            }
+        }
+
+        document.addEventListener('keydown', function (event) {
+            if (event.key === 'Escape') {
+                closePDFViewer();
+            }
+        });
+    </script>
 </body>
 </html>
