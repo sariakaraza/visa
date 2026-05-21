@@ -140,19 +140,19 @@ public class PdfReceiptServiceImpl implements PdfReceiptService {
 
         PdfPTable piecesTable = new PdfPTable(3);
         piecesTable.setWidthPercentage(100f);
-        piecesTable.setWidths(new float[]{2.2f, 1.1f, 2.2f});
+        piecesTable.setWidths(new float[]{2.2f, 1.1f, 2.0f});
 
         piecesTable.addCell(createHeaderCell("Dossier", sectionFont));
         piecesTable.addCell(createHeaderCell("Date ajout", sectionFont));
-        piecesTable.addCell(createHeaderCell("Fichier", sectionFont));
+        piecesTable.addCell(createHeaderCell("Aperçu", sectionFont));
 
         for (PieceJustificative piece : pieces) {
             String dossier = piece != null && piece.getDossier() != null ? safeText(piece.getDossier().getLibelle()) : "-";
             String date = piece != null && piece.getDateAjout() != null ? piece.getDateAjout().toString() : "-";
-            String fichier = piece != null ? safeText(piece.getCheminFichier()) : "-";
+            Path piecePath = piece != null ? resolveStoredPath(piece.getCheminFichier()) : null;
             piecesTable.addCell(createValueCell(dossier, normalFont));
             piecesTable.addCell(createValueCell(date, normalFont));
-            piecesTable.addCell(createValueCell(fichier, normalFont));
+            piecesTable.addCell(createThumbnailCell(piecePath, 110, 110));
         }
 
         document.add(piecesTable);
@@ -164,6 +164,28 @@ public class PdfReceiptServiceImpl implements PdfReceiptService {
         cell.setPadding(8f);
 
         cell.addElement(new Paragraph(title));
+
+        if (path != null && Files.exists(path)) {
+            try {
+                Image image = Image.getInstance(path.toAbsolutePath().toString());
+                image.scaleToFit(maxWidth, maxHeight);
+                image.setAlignment(Element.ALIGN_CENTER);
+                cell.addElement(image);
+                return cell;
+            } catch (Exception ignored) {
+                // fall through to placeholder text
+            }
+        }
+
+        cell.addElement(new Paragraph("Indisponible"));
+        return cell;
+    }
+
+    private PdfPCell createThumbnailCell(Path path, float maxWidth, float maxHeight) {
+        PdfPCell cell = new PdfPCell();
+        cell.setPadding(6f);
+        cell.setHorizontalAlignment(Element.ALIGN_CENTER);
+        cell.setVerticalAlignment(Element.ALIGN_MIDDLE);
 
         if (path != null && Files.exists(path)) {
             try {
