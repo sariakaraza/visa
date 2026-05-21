@@ -17,3 +17,8 @@ FINOANA
 				-ajouter le qr code de la demande
 				-ajouter photo du demandeur
 
+
+fix/sprint/6/pdf : 
+- dans export , mettre un petit paragraphe professionnel pour dire que les dossiers sont bien recus
+- dans la liste des donnees recues, ne pas afficher les fichiers en "chemin" , exemple : uploads/pieces/443b5812-3aac-41dc-a18f-
+2e1f2eb56b80.png MAIS afficher les images reels
