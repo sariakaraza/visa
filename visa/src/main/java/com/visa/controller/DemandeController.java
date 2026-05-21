@@ -12,6 +12,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 
 import java.sql.Date;
 import java.sql.Timestamp;
@@ -40,8 +43,9 @@ public class DemandeController {
     private final PieceJustificativeService pieceJustificativeService;
     private final DemandeStatutService demandeStatutService;
     private final StatutDemandeService statutDemandeService;
+    private final PdfReceiptService pdfReceiptService;
 
-    public DemandeController(DemandeService demandeService, DemandeurService demandeurService, PasseportService passeportService, VisaTransformableService visaTransformableService, LieuService lieuService, TypeDemandeService typeDemandeService, TypeVisaService typeVisaService, NationaliteService nationaliteService, SituationFamilialeService situationFamilialeService, DossierService dossierService, PieceJustificativeService pieceJustificativeService, DemandeStatutService demandeStatutService, StatutDemandeService statutDemandeService) {
+    public DemandeController(DemandeService demandeService, DemandeurService demandeurService, PasseportService passeportService, VisaTransformableService visaTransformableService, LieuService lieuService, TypeDemandeService typeDemandeService, TypeVisaService typeVisaService, NationaliteService nationaliteService, SituationFamilialeService situationFamilialeService, DossierService dossierService, PieceJustificativeService pieceJustificativeService, DemandeStatutService demandeStatutService, StatutDemandeService statutDemandeService, PdfReceiptService pdfReceiptService) {
         this.demandeService = demandeService;
         this.demandeurService = demandeurService;
         this.passeportService = passeportService;
@@ -55,6 +59,7 @@ public class DemandeController {
         this.pieceJustificativeService = pieceJustificativeService;
         this.demandeStatutService = demandeStatutService;
         this.statutDemandeService = statutDemandeService;
+        this.pdfReceiptService = pdfReceiptService;
     }
 
     @GetMapping("/new")
@@ -630,7 +635,40 @@ public class DemandeController {
         model.addAttribute("visaTransformable", visaTransformable);
         model.addAttribute("lieu", lieu);
 
+        // déterminer si l'export PDF doit être affiché (dernier statut = "Scan terminé")
+        List<DemandeStatut> statuts = demandeStatutService.findByDemande(demande);
+        DemandeStatut latestStatut = statuts.stream().max(java.util.Comparator
+            .comparing(DemandeStatut::getDateStatut, java.util.Comparator.nullsLast(java.sql.Date::compareTo))
+            .thenComparing(DemandeStatut::getIdDemandeStatut, java.util.Comparator.nullsLast(Integer::compareTo))).orElse(null);
+
+        boolean showExport = latestStatut != null && latestStatut.getStatutDemande() != null && "Scan terminé".equalsIgnoreCase(latestStatut.getStatutDemande().getLibelle());
+        model.addAttribute("showExport", showExport);
+
         return "demande/view";
+    }
+
+    @GetMapping("/{id}/export-receipt")
+    public ResponseEntity<byte[]> exportReceipt(@PathVariable Integer id) {
+        Demande demande = demandeService.findById(id).orElseThrow();
+        List<DemandeStatut> statuts = demandeStatutService.findByDemande(demande);
+        DemandeStatut latest = statuts.stream().max(java.util.Comparator
+                .comparing(DemandeStatut::getDateStatut, java.util.Comparator.nullsLast(java.sql.Date::compareTo))
+                .thenComparing(DemandeStatut::getIdDemandeStatut, java.util.Comparator.nullsLast(Integer::compareTo))).orElse(null);
+
+        if (latest == null || latest.getStatutDemande() == null || !"Scan terminé".equalsIgnoreCase(latest.getStatutDemande().getLibelle())) {
+            return ResponseEntity.badRequest().header("X-Error", "Export possible uniquement lorsque le statut est 'Scan terminé'").body(new byte[0]);
+        }
+
+        try {
+            byte[] pdf = pdfReceiptService.generateReceipt(demande);
+            String fileName = "accuse_receipt_" + (demande.getReferenceDemande() != null ? demande.getReferenceDemande() : demande.getIdDemande()) + ".pdf";
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_PDF);
+            headers.setContentDispositionFormData("attachment", fileName);
+            return ResponseEntity.ok().headers(headers).body(pdf);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).header("X-Error", "Erreur génération PDF").body(new byte[0]);
+        }
     }
 
     @GetMapping("/edit/{id}")

@@ -19,7 +19,7 @@
 
         <main class="content">
             <div class="container">
-                <h1>Détail de la Demande</h1>
+                <h1>Détail de la Demande aaaaaaaaaa</h1>
 
                 <div class="profile-photo-container" style="margin-bottom: 24px;">
                     <div th:if="${photoProfil == null}" style="color: var(--color-muted); font-style: italic;">
@@ -135,6 +135,8 @@
             <a th:if="${signature == null}" 
             th:href="@{/signature/draw/{id}(id=${demande.idDemande})}" 
             class="btn action-btn">Ajouter une signature</a>
+            
+            <a th:if="${showExport}" th:href="@{/demande/{id}/export-receipt(id=${demande.idDemande})}" class="btn action-btn">EXPORTER PDF</a>
         </main>
     </div>
 </body>
